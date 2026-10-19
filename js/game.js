@@ -617,7 +617,7 @@
   }
 
   /* ── シェア ── */
-  const SHARE_URL = 'https://claude.ai/artifact/9xZGV2NY67bufcaw4fGh75';
+  const SHARE_URL = 'https://techgym.jp/column/claude-code-game-shireito/';
   function shareBar(text) {
     const full = `${text}\n#司令塔 #判断力の筋トレ`;
     const enc = encodeURIComponent;
