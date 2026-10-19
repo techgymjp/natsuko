@@ -536,6 +536,7 @@
       h('p', { class: 'text' }, end.text),
       h('div', { class: 'panel', style: 'padding:16px' }, h('div', { class: 'meters' }, sc.meters.map(m => meterRow(m.n, G.m[m.k], m.k)))),
       h('div', { class: 'panel epilogue' }, h('div', { class: 'eyebrow', style: 'margin-bottom:6px' }, '史実では'), h('p', null, sc.epilogue)),
+      shareBar(`司令塔「${sc.title}」で${sc.role}として決断した。結末は「${end.title}」。判断の質 ${R.proc} / 結果 ${R.out}`),
       h('div', { class: 'row' },
         h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.reveal(); renderReview(); } }, '判断を振り返る'),
         h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); startScenario(sc.id); } }, 'もう一度挑む'))));
@@ -613,6 +614,23 @@
       if (fallbackEl) { const r = document.createRange(); r.selectNodeContents(fallbackEl); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
       toast('コピーできませんでした。選択された文字を手動でコピーしてください');
     }
+  }
+
+  /* ── シェア ── */
+  const SHARE_URL = 'https://claude.ai/artifact/9xZGV2NY67bufcaw4fGh75';
+  function shareBar(text) {
+    const full = `${text}\n#司令塔 #判断力の筋トレ`;
+    const enc = encodeURIComponent;
+    const textEl = h('div', { class: 'codebox share-text' }, `${full}\n${SHARE_URL}`);
+    const link = (label, href) => h('a', { class: 'btn ghost small', href, target: '_blank', rel: 'noopener', onclick: () => S.sfx.select() }, label);
+    return h('div', { class: 'panel share' },
+      h('div', { class: 'eyebrow' }, '結果をシェアする'),
+      textEl,
+      h('div', { class: 'row' },
+        link('Xでポスト', `https://twitter.com/intent/tweet?text=${enc(full)}&url=${enc(SHARE_URL)}`),
+        link('LINEで送る', `https://line.me/R/share?text=${enc(full + '\n' + SHARE_URL)}`),
+        link('Facebook', `https://www.facebook.com/sharer/sharer.php?u=${enc(SHARE_URL)}`),
+        h('button', { class: 'btn small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, '文章をコピー')));
   }
 
   function renderReview() {
@@ -948,6 +966,7 @@
         h('div', { class: 'eyebrow' }, '史実では'),
         h('p', null, q.hist),
         h('p', { class: 'lesson' }, q.lesson)),
+      shareBar(`司令塔「今日の1判断」${q.title}(${q.year})。私の判断は「${res.i < 0 ? '時間切れ' : q.opt[res.i].l}」で、${verdict}だった。${practice ? '' : `${streakNow()}日連続挑戦中。`}`),
       h('div', { class: 'row' },
         h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦室へ')),
       h('div', { class: 'eyebrow', style: 'margin-top:12px' }, '過去問に挑む(連続記録には数えません)'),
