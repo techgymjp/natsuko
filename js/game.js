@@ -26,6 +26,10 @@
   const LET = ['A', 'B', 'C'];
   const SC = window.SCENARIOS, ADV = window.ADVISORS, DAILY = window.DAILY;
   const S = window.SND;
+  const Ads = window.Ads;
+  // Android アプリ（Capacitor）で動いているか。Web 版では Capacitor がないので何もしない
+  const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  const plugin = name => (NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins[name] : null);
 
   /* ── 保存 ── */
   const KEY = 'shireito.v1';
@@ -300,6 +304,9 @@
     const reportsEl = h('div', { class: 'reports', 'aria-live': 'polite', onclick: () => { skipTyping = true; } });
     const invBtn = h('button', { class: 'btn ghost small', type: 'button', id: 'inv', disabled: true, onclick: investigate }, `裏を取る(-${t.inv.c}秒)`);
     const invNote = h('div', { class: 'inv-note', hidden: true });
+    const adBtn = Ads.available && !G.rewardUsed
+      ? h('button', { class: 'btn ghost small', type: 'button', id: 'adtime', disabled: true, onclick: e => watchAdForTime(e.currentTarget) }, '広告を見て+30秒')
+      : null;
     const advEl = h('div', { class: 'advisors' });
     const conf = h('input', { type: 'range', id: 'conf', min: '50', max: '100', step: '5', value: '70' });
     const confVal = h('span', { class: 'conf-val' }, '70%');
@@ -322,7 +329,7 @@
       h('div', { class: 'turn-body' },
         h('div', { class: 'col' },
           h('div', { class: 'panel sit' }, sit),
-          h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, '入電'), invBtn),
+          h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, '入電'), h('span', { class: 'row', style: 'gap:8px' }, adBtn, invBtn)),
           reportsEl, invNote),
         h('div', { class: 'col' },
           h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, 'AI参謀の進言')),
@@ -365,6 +372,7 @@
       S.sfx.radio();
       if (!T || G.ti !== myTurn || screen !== 's-turn') return;
       invBtn.disabled = false;
+      if (adBtn) adBtn.disabled = false;
       startTimer(sc.time, tm => {
         ring.update(tm.left, tm.limit);
         const frac = 1 - tm.left / tm.limit;
@@ -491,6 +499,33 @@
     }, 500);
   }
 
+  /* ── 広告（Android アプリのときだけ。Web 版では何もしない） ── */
+  // 作戦を終えて次へ進むとき、2回に1回だけ全画面広告を出す
+  let missionsDone = 0;
+  async function afterMission(next) {
+    if (G && !G.adCounted) { G.adCounted = true; missionsDone++; }
+    if (Ads.available && missionsDone % 2 === 0 && !G.adShown) { G.adShown = true; await Ads.showInterstitial(); }
+    next();
+  }
+  // 1作戦に1回、リワード広告を見ると持ち時間が30秒延びる
+  async function watchAdForTime(btn) {
+    if (!T || T.decided || G.rewardUsed || !timer) return;
+    btn.disabled = true;
+    timer.paused = true;
+    const r = await Ads.showRewarded();
+    if (timer) { timer.last = performance.now(); timer.paused = false; }
+    if (r === 'rewarded' && timer && T && !T.decided) {
+      G.rewardUsed = true;
+      timer.left += 30; timer.limit += 30;
+      btn.textContent = '+30秒 延長済み';
+      S.sfx.success();
+      toast('持ち時間が30秒延びました');
+    } else {
+      btn.disabled = false;
+      if (r === 'unavailable') toast('いまは広告を読み込めませんでした');
+    }
+  }
+
   /* ════════════════ 結末 ════════════════ */
   function compute(log, sc, m) {
     const out = Math.round(avg(Object.values(m)));
@@ -539,7 +574,7 @@
       shareBar(`司令塔「${sc.title}」で${sc.role}として決断した。結末は「${end.title}」。判断の質 ${R.proc} / 結果 ${R.out}`),
       h('div', { class: 'row' },
         h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.reveal(); renderReview(); } }, '判断を振り返る'),
-        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); startScenario(sc.id); } }, 'もう一度挑む'))));
+        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, 'もう一度挑む'))));
     bindSfx(root);
     show('s-ending');
   }
@@ -623,6 +658,19 @@
     const enc = encodeURIComponent;
     const textEl = h('div', { class: 'codebox share-text' }, `${full}\n${SHARE_URL}`);
     const link = (label, href) => h('a', { class: 'btn ghost small', href, target: '_blank', rel: 'noopener', onclick: () => S.sfx.select() }, label);
+    const nativeShare = plugin('Share');
+    if (nativeShare) {
+      // アプリでは Android の共有メニューを出す
+      return h('div', { class: 'panel share' },
+        h('div', { class: 'eyebrow' }, '結果をシェアする'),
+        textEl,
+        h('div', { class: 'row' },
+          h('button', { class: 'btn small', type: 'button', onclick: async () => {
+            S.sfx.select();
+            try { await nativeShare.share({ title: '司令塔', text: full, url: SHARE_URL, dialogTitle: '結果をシェア' }); } catch (e) { /* キャンセル */ }
+          } }, 'シェアする'),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, '文章をコピー')));
+    }
     return h('div', { class: 'panel share' },
       h('div', { class: 'eyebrow' }, '結果をシェアする'),
       textEl,
@@ -743,8 +791,8 @@
       h('div', { class: 'hub-head' },
         h('div', null, h('div', { class: 'eyebrow' }, `${sc.title} — 振り返り`), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, '判断を解剖する')),
         h('div', { class: 'row' },
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); startScenario(sc.id); } }, 'もう一度挑む'),
-          h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦室へ'))),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, 'もう一度挑む'),
+          h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); afterMission(goHub); } }, '作戦室へ'))),
       tabBar, body);
     body.append(panels.sum);
     bindSfx(root);
@@ -1013,6 +1061,20 @@
       h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦室へ'))));
     bindSfx(root);
     show('s-howto');
+  }
+
+  /* ── Android アプリ ── */
+  if (window.APP_VERSION && window.APP_VERSION !== 'dev') $('#build-info').textContent = window.APP_VERSION;
+  Ads.initDone.then(() => { if (Ads.privacyOptionsRequired) $('#ad-privacy').hidden = false; });
+  $('#ad-privacy').addEventListener('click', () => Ads.showPrivacyOptions());
+  if (plugin('App')) {
+    // 戻るボタン: タイトルと作戦室ではアプリを終了。作戦中は2回押しで中断。それ以外は作戦室へ
+    plugin('App').addListener('backButton', () => {
+      if (Ads.showing) return;
+      if (screen === 's-title' || screen === 's-hub') { plugin('App').exitApp(); return; }
+      if (document.querySelector('.overlay')) return;
+      leaveTo(goHub);
+    });
   }
 
   // タイトル画面のボタンにも効果音を

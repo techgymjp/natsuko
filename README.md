@@ -23,9 +23,24 @@
 ## 遊び方
 `index.html` をブラウザで開くだけ。ビルド不要。記録はブラウザの localStorage に保存される。
 
+## Android 版
+Capacitor 8 で Android アプリにしている(パッケージ名 `jp.techgym.natsuko`、縦画面)。構成は techgymjp/jet-fighter の `docs/ANDROID_PORTING.md` と同じ。
+
+- `npm run build` で `www/` に Web ファイルをコピーし、`js/ads-config.js`(テスト広告か本番広告か)と `js/build-info.js`(バージョン)を生成する
+- ビルドは GitHub Actions(`.github/workflows/android.yml`)で行う。既定ブランチのビルドは Release `android-latest` に動作確認用の `shireito.apk` を載せる。署名鍵の Secrets があれば Google Play 用の署名付き AAB も作る
+- 広告(AdMob): 作戦を終えて次へ進むときに2回に1回の全画面広告、局面ごとに1作戦1回まで「広告を見て+30秒」のリワード広告
+- 本番の AdMob のアプリ ID は `android/app/src/main/res/values/strings.xml` の `admob_app_id`、広告ユニット ID は `js/ads.js` の `production` に入れる。入れるまではテスト広告になる
+- アプリでは戻るボタン、Android の共有メニューでのシェア、タイトル画面のビルド番号とプライバシーポリシー、広告の設定(同意が必要な地域のみ)に対応
+
 ## 構成
 - `index.html` — 画面とスタイル
 - `js/scenarios.js` — 6作戦のデータ
 - `js/daily.js` — 今日の1判断のデータ
 - `js/audio.js` — BGM・効果音の合成エンジン
 - `js/game.js` — ゲーム進行と画面
+- `js/ads.js` — AdMob 広告(Android アプリのときだけ動く)
+- `android/` — Android プロジェクト(Capacitor)
+- `scripts/build-web.js` — `www/` を作るビルドスクリプト
+
+## ライセンス
+著作権はテックジム株式会社に帰属します(All rights reserved)。許可なく複製・改変・再配布すること、Web サイトやアプリとして公開・販売すること、名前・アイコン・画像を使うことを禁止します。テックジムの受講生が学習目的で複製・改変することは許可しますが、アプリストアでの公開や広告掲載などの商用利用は禁止です。詳しくは `LICENSE` を参照してください。

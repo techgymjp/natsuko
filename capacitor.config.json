@@ -1,0 +1,8 @@
+{
+  "appId": "jp.techgym.natsuko",
+  "appName": "司令塔",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#11161D"
+  }
+}

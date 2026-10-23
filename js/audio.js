@@ -368,8 +368,18 @@ window.SND = (() => {
     else if (kind === 'air') { sfx.engineDown(); setTimeout(() => sfx.caution(), 700); }
   }
 
+  // 広告の表示中や、別のアプリに切り替えたときは音を止める
+  let suspended = false;
+  document.addEventListener('visibilitychange', () => {
+    if (!ctx) return;
+    if (document.hidden) ctx.suspend();
+    else if (!suspended) ctx.resume();
+  });
+
   return {
     init, play, stopBgm, intro, sfx,
+    suspend() { suspended = true; if (ctx) ctx.suspend(); },
+    resume() { suspended = false; if (ctx && !document.hidden) ctx.resume(); },
     get ready() { return !!ctx; },
     setIntensity(x) { intensity = Math.max(0, Math.min(1, x)); },
     setVol(k, v) { settings[k] = v; applyVol(); },

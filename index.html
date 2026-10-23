@@ -116,6 +116,9 @@ a.btn { text-decoration: none; }
 .callsign { display: grid; gap: 6px; max-width: 320px; }
 .callsign input { background: var(--console); border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px 12px; min-height: 44px; }
 .note { font-size: 12px; color: var(--dim); }
+.legal { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.legal a, .linklike { color: var(--dim); text-decoration: underline; background: none; border: 0; padding: 0; font-size: 12px; }
+.legal a:hover, .linklike:hover { color: var(--amber); }
 
 /* 作戦室(ハブ) */
 .hub-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
@@ -403,6 +406,11 @@ table.cmp td.same { color: var(--go); }
           <button class="btn" id="enter" type="button">作戦室に入る</button>
           <span class="note">音が鳴ります。BGMと効果音はすべてその場で合成しています。</span>
         </div>
+        <p class="note legal">
+          <span id="build-info"></span>
+          <a href="https://techgym.jp/privacy-policy/" target="_blank" rel="noopener">プライバシーポリシー</a>
+          <button class="linklike" id="ad-privacy" type="button" hidden>広告の設定</button>
+        </p>
       </div>
     </div>
   </section>
@@ -418,7 +426,10 @@ table.cmp td.same { color: var(--go); }
   <section id="s-howto" class="screen" hidden><div class="wrap" id="howto"></div></section>
 </main>
 
+<script src="js/build-info.js"></script>
+<script src="js/ads-config.js"></script>
 <script src="js/audio.js"></script>
+<script src="js/ads.js"></script>
 <script src="js/scenarios.js"></script>
 <script src="js/daily.js"></script>
 <script src="js/game.js"></script>
