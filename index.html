@@ -109,6 +109,8 @@ a.btn { text-decoration: none; }
 .hero { display: grid; gap: 28px; max-width: 820px; }
 .hero h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(64px, 16vw, 168px); line-height: 1; letter-spacing: .08em; }
 .hero h1 .dot { color: var(--amber); }
+html[lang="en"] .hero h1 { font-size: clamp(46px, 11vw, 124px); letter-spacing: .01em; }
+html[lang="en"] .brand { letter-spacing: .04em; }
 .hero .lede { font-size: clamp(16px, 2.4vw, 19px); max-width: 38em; color: var(--text); }
 .ticker { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 .ticker div { padding: 10px 12px 10px 0; font-family: var(--f-mono); font-size: 12px; color: var(--dim); }
@@ -178,7 +180,7 @@ input[type=range] { accent-color: var(--amber); width: 100%; }
 .timer { position: relative; width: 92px; height: 92px; }
 .timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .timer .num { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-mono); font-size: 26px; font-weight: 600; }
-.timer .num small { display: block; font-size: 9px; letter-spacing: .2em; color: var(--dim); font-weight: 400; margin-top: -26px; }
+.timer .num small { display: none; }
 .timer.urgent .num { color: var(--signal); animation: pulse 1s infinite; }
 @keyframes pulse { 50% { opacity: .45; } }
 
@@ -362,7 +364,6 @@ table.cmp td.same { color: var(--go); }
   .meter, .delta { grid-template-columns: 7em 1fr 2.4em; }
   .timer { width: 74px; height: 74px; }
   .timer .num { font-size: 21px; }
-  .timer .num small { display: none; }
   .compare2 { grid-template-columns: minmax(0, 1fr); }
   .tl-head, .tl-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .tl-head .when, .tl-row .when { grid-column: 1 / -1; }
@@ -376,9 +377,9 @@ table.cmp td.same { color: var(--go); }
 
 <header class="topbar" id="topbar" hidden>
   <div class="wrap">
-    <button class="brand" id="brand" type="button">司令塔<small>COMMAND SEAT</small></button>
+    <button class="brand" id="brand" type="button"><span data-i18n="title.h1">司令塔</span><small data-i18n="brand.sub">COMMAND SEAT</small></button>
     <span class="spacer"></span>
-    <button class="btn ghost small" id="nav-hub" type="button">作戦室</button>
+    <button class="btn ghost small" id="nav-hub" type="button" data-i18n="nav.hub">作戦室</button>
     <button class="btn ghost small" id="nav-sound" type="button" aria-pressed="true">音 ON</button>
   </div>
 </header>
@@ -387,10 +388,10 @@ table.cmp td.same { color: var(--go); }
   <section id="s-title" class="screen">
     <div class="wrap">
       <div class="hero">
-        <div class="eyebrow">判断力を鍛える歴史シミュレーション</div>
-        <h1>司令塔<span class="dot">.</span></h1>
-        <p class="lede">キューバ危機、アポロ13号、ミッドウェー、南極、地下700m、ハドソン川。歴史に残る危機の中心で、あなたが決める。情報は不完全で、時間はなく、AI参謀は時々もっともらしく間違える。</p>
-        <div class="ticker" aria-label="収録された作戦">
+        <div class="row" style="justify-content:space-between"><div class="eyebrow" data-i18n="title.eyebrow">判断力を鍛える歴史シミュレーション</div><button class="btn ghost small" id="lang-title" type="button" data-i18n="lang.switch" lang="">English</button></div>
+        <h1><span data-i18n="title.h1">司令塔</span><span class="dot">.</span></h1>
+        <p class="lede" data-i18n="title.lede">キューバ危機、アポロ13号、ミッドウェー、南極、地下700m、ハドソン川。歴史に残る危機の中心で、あなたが決める。情報は不完全で、時間はなく、AI参謀は時々もっともらしく間違える。</p>
+        <div class="ticker" aria-label="収録された作戦" data-i18n-aria="title.ticker">
           <div>1962<b>キューバ危機</b></div>
           <div>1970<b>アポロ13号</b></div>
           <div>1942<b>ミッドウェー海戦</b></div>
@@ -399,17 +400,17 @@ table.cmp td.same { color: var(--go); }
           <div>2009<b>ハドソン川の奇跡</b></div>
         </div>
         <div class="callsign">
-          <label class="eyebrow" for="callsign">あなたのコールサイン(任意)</label>
-          <input id="callsign" type="text" maxlength="16" placeholder="例: ナツコ" autocomplete="off">
+          <label class="eyebrow" for="callsign" data-i18n="title.callsign">あなたのコールサイン(任意)</label>
+          <input id="callsign" type="text" maxlength="16" placeholder="例: ナツコ" data-i18n-ph="title.callsign.ph" autocomplete="off">
         </div>
         <div class="row">
-          <button class="btn" id="enter" type="button">作戦室に入る</button>
-          <span class="note">音が鳴ります。BGMと効果音はすべてその場で合成しています。</span>
+          <button class="btn" id="enter" type="button" data-i18n="title.enter">作戦室に入る</button>
+          <span class="note" data-i18n="title.note">音が鳴ります。BGMと効果音はすべてその場で合成しています。</span>
         </div>
         <p class="note legal">
           <span id="build-info"></span>
-          <a href="https://techgym.jp/privacy-policy/" target="_blank" rel="noopener">プライバシーポリシー</a>
-          <button class="linklike" id="ad-privacy" type="button" hidden>広告の設定</button>
+          <a href="https://techgym.jp/privacy-policy/" target="_blank" rel="noopener" data-i18n="title.privacy" data-i18n-href="title.privacy.url">プライバシーポリシー</a>
+          <button class="linklike" id="ad-privacy" type="button" hidden data-i18n="title.adprivacy">広告の設定</button>
         </p>
       </div>
     </div>
@@ -432,4 +433,12 @@ table.cmp td.same { color: var(--go); }
 <script src="js/ads.js"></script>
 <script src="js/scenarios.js"></script>
 <script src="js/daily.js"></script>
+<script src="js/en/cuba.js"></script>
+<script src="js/en/apollo.js"></script>
+<script src="js/en/midway.js"></script>
+<script src="js/en/shackleton.js"></script>
+<script src="js/en/chile.js"></script>
+<script src="js/en/hudson.js"></script>
+<script src="js/en/daily.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/game.js"></script>

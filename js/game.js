@@ -27,6 +27,12 @@
   const SC = window.SCENARIOS, ADV = window.ADVISORS, DAILY = window.DAILY;
   const S = window.SND;
   const Ads = window.Ads;
+  const t = window.I18N.t;
+  const EN = window.I18N.lang === 'en';
+  // 「」で囲む(英語では "")
+  const q = x => (EN ? `"${x}"` : `「${x}」`);
+  // 時刻表示から日付の部分だけ取り出す
+  const dayOf = c => (EN ? c.split(',')[0] : c.split(' ')[0]);
   // Android アプリ（Capacitor）で動いているか。Web 版では Capacitor がないので何もしない
   const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const plugin = name => (NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins[name] : null);
@@ -81,8 +87,8 @@
   function stopTimer() { if (timer) { clearInterval(timer.iv); timer = null; } }
   function timerRing(id) {
     const r = 40, c = 2 * Math.PI * r;
-    const el = h('div', { class: 'timer', id, role: 'timer', 'aria-label': '残り時間' });
-    el.innerHTML = `<svg viewBox="0 0 92 92" aria-hidden="true"><circle cx="46" cy="46" r="${r}" fill="none" stroke="var(--console-2)" stroke-width="6"/><circle class="arc" cx="46" cy="46" r="${r}" fill="none" stroke="var(--amber)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="0"/></svg><div class="num"><div><small>残り</small><span>--</span></div></div>`;
+    const el = h('div', { class: 'timer', id, role: 'timer', 'aria-label': t('timer.aria') });
+    el.innerHTML = `<svg viewBox="0 0 92 92" aria-hidden="true"><circle cx="46" cy="46" r="${r}" fill="none" stroke="var(--console-2)" stroke-width="6"/><circle class="arc" cx="46" cy="46" r="${r}" fill="none" stroke="var(--amber)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="0"/></svg><div class="num"><div><small>${t('timer.left')}</small><span>--</span></div></div>`;
     el.update = (left, limit) => {
       const f = clamp(left / limit, 0, 1);
       const arc = el.querySelector('.arc');
@@ -114,6 +120,10 @@
   }
 
   /* ════════════════ タイトル ════════════════ */
+  window.I18N.applyStatic();
+  syncSoundBtn();
+  $('#s-title .ticker').replaceChildren(...SC.map(sc => h('div', null, (sc.year.match(/\d{4}/) || [''])[0], h('b', null, sc.title))));
+  $('#lang-title').addEventListener('click', () => window.I18N.setLang(EN ? 'ja' : 'en'));
   $('#callsign').value = store.name || '';
   $('#enter').addEventListener('click', () => {
     store.name = $('#callsign').value.trim().slice(0, 16);
@@ -134,7 +144,7 @@
   });
   function syncSoundBtn() {
     const b = $('#nav-sound');
-    b.textContent = S.settings.muted ? '音 OFF' : '音 ON';
+    b.textContent = S.settings.muted ? t('nav.sound.off') : t('nav.sound.on');
     b.setAttribute('aria-pressed', String(!S.settings.muted));
   }
   function persistAudio() { const s = S.settings; store.audio = { master: s.master, bgm: s.bgm, sfx: s.sfx, muted: s.muted }; save(); }
@@ -146,13 +156,13 @@
     const inDaily = screen === 's-daily' && D && D.running;
     if ((inMission || inDaily) && !leaveArmed) {
       leaveArmed = true;
-      $('#nav-hub').textContent = '本当に中断する?';
+      $('#nav-hub').textContent = t('nav.confirm');
       S.sfx.flag();
-      setTimeout(() => { leaveArmed = false; $('#nav-hub').textContent = '作戦室'; }, 3000);
+      setTimeout(() => { leaveArmed = false; $('#nav-hub').textContent = t('nav.hub'); }, 3000);
       return;
     }
     leaveArmed = false;
-    $('#nav-hub').textContent = '作戦室';
+    $('#nav-hub').textContent = t('nav.hub');
     stopTimer();
     $$('.overlay').forEach(o => o.remove());
     if (D) D.running = false;
@@ -182,12 +192,13 @@
     root.append(
       h('div', { class: 'hub-head' },
         h('div', null,
-          h('div', { class: 'eyebrow' }, store.name ? `ようこそ、${store.name} 司令` : 'ようこそ、司令'),
-          h('h2', null, '作戦を選んでください')),
+          h('div', { class: 'eyebrow' }, store.name ? t('hub.welcome', { name: store.name }) : t('hub.welcome0')),
+          h('h2', null, t('hub.h2'))),
         h('div', { class: 'row' },
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); goHowto(); } }, '遊び方'),
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); goProfile(); } }, '判断プロフィール'),
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); goCompare(); } }, '友人と比べる'))),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); goHowto(); } }, t('hub.howto')),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); goProfile(); } }, t('hub.profile')),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); goCompare(); } }, t('hub.compare')),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => window.I18N.setLang(EN ? 'ja' : 'en') }, t('lang.switch')))),
       h('div', { class: 'hub-grid' },
         h('div', { class: 'cards' }, SC.map(sc => {
           const b = bestOf(sc.id);
@@ -195,29 +206,29 @@
             h('span', { class: 'yr' }, sc.year),
             h('h3', null, sc.title),
             h('span', { class: 'sub' }, sc.sub),
-            h('span', { class: 'role' }, `あなた: ${sc.role}`, h('br'), h('span', { class: 'muted' }, sc.roleNote)),
+            h('span', { class: 'role' }, t('hub.you', { role: sc.role }), h('br'), h('span', { class: 'muted' }, sc.roleNote)),
             h('span', { class: 'foot' },
-              h('span', { class: 'chip' }, '難度 ', h('span', { class: 'pips' }, [1, 2, 3].map(i => h('i', { class: i <= sc.diff ? 'on' : '' })))),
-              h('span', { class: 'chip' }, `1判断 ${sc.time}秒`),
-              h('span', { class: 'chip' }, `${sc.turns.length}局面`),
-              b ? h('span', { class: 'chip amber' }, `最高 判断${b.proc}・結果${b.out}`) : null));
+              h('span', { class: 'chip' }, t('hub.diff'), h('span', { class: 'pips' }, [1, 2, 3].map(i => h('i', { class: i <= sc.diff ? 'on' : '' })))),
+              h('span', { class: 'chip' }, t('hub.time', { s: sc.time })),
+              h('span', { class: 'chip' }, t('hub.turns', { n: sc.turns.length })),
+              b ? h('span', { class: 'chip amber' }, t('hub.best', { p: b.proc, o: b.out })) : null));
         })),
         h('aside', { class: 'side' },
           h('div', { class: 'panel daily-card' },
-            h('div', { class: 'eyebrow' }, '今日の1判断'),
+            h('div', { class: 'eyebrow' }, t('hub.daily')),
             h('h3', null, today.title),
             h('p', { class: 'muted', style: 'font-size:13px' }, `${today.year} / ${today.role}`),
             h('div', { class: 'row' },
-              h('div', null, h('div', { class: 'streak' }, String(streakNow())), h('div', { class: 'note' }, '日連続')),
+              h('div', null, h('div', { class: 'streak' }, String(streakNow())), h('div', { class: 'note' }, t('hub.streak'))),
               h('span', { class: 'spacer', style: 'flex:1' }),
-              h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.select(); goDaily(); } }, doneToday ? '結果と過去問' : '3分で挑む'))),
+              h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.select(); goDaily(); } }, doneToday ? t('hub.daily.done') : t('hub.daily.go')))),
           h('div', { class: 'panel' },
-            h('h3', null, 'AI参謀'),
+            h('h3', null, t('hub.advisors')),
             h('div', { class: 'adv-mini' }, Object.entries(ADV).map(([k, a]) =>
-              h('div', null, h('span', { class: `glyph g-${k}` }, a.glyph), h('span', null, h('b', null, a.name), ` ${a.stance}。${a.desc}。`)))),
-            h('p', { class: 'note' }, '3人のうち誰かが、もっともらしい理屈で間違えることがある。誰を、どこまで信じるかもあなたの判断だ。')),
+              h('div', null, h('span', { class: `glyph g-${k}` }, a.glyph), h('span', null, h('b', null, a.name), EN ? ` ${a.stance}. ${a.desc}.` : ` ${a.stance}。${a.desc}。`)))),
+            h('p', { class: 'note' }, t('hub.advisors.note'))),
           h('div', { class: 'panel' },
-            h('h3', null, '音量'),
+            h('h3', null, t('hub.volume')),
             volControls()))));
     bindSfx(root);
     show('s-hub');
@@ -231,7 +242,7 @@
       inp.addEventListener('change', persistAudio);
       return [h('label', { for: id }, label), inp];
     };
-    return h('div', { class: 'vol' }, row('master', '全体'), row('bgm', 'BGM'), row('sfx', '効果音'));
+    return h('div', { class: 'vol' }, row('master', t('vol.master')), row('bgm', t('vol.bgm')), row('sfx', t('vol.sfx')));
   }
 
   /* ════════════════ 作戦: ブリーフィング ════════════════ */
@@ -248,7 +259,7 @@
     setTimeout(() => S.intro(sc.intro_sfx), 500);
     const root = $('#brief'); root.innerHTML = '';
     const tele = h('div', { class: 'teletype', 'aria-live': 'polite' });
-    const startBtn = h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.stamp(); renderTurn(); } }, '作戦を開始する');
+    const startBtn = h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.stamp(); renderTurn(); } }, t('brief.start'));
     root.append(
       h('div', { class: 'brief-grid' },
         h('div', null,
@@ -257,17 +268,17 @@
           h('div', { class: 'brief-sub' }, sc.sub),
           tele,
           h('div', { class: 'row', style: 'margin-top:24px' }, startBtn,
-            h('button', { class: 'btn ghost small', type: 'button', onclick: () => { skipTyping = true; } }, '文字送りを飛ばす'))),
+            h('button', { class: 'btn ghost small', type: 'button', onclick: () => { skipTyping = true; } }, t('brief.skip')))),
         h('aside', { class: 'panel dossier' },
-          h('div', { class: 'eyebrow' }, '任務ファイル'),
+          h('div', { class: 'eyebrow' }, t('brief.file')),
           h('dl', { class: 'kv' },
-            h('dt', null, 'あなた'), h('dd', null, sc.role, h('br'), h('span', { class: 'muted' }, sc.roleNote)),
-            h('dt', null, '局面'), h('dd', null, `${sc.turns.length}つ`),
-            h('dt', null, '持ち時間'), h('dd', null, `1判断あたり${sc.time}秒`)),
-          h('h3', null, '見守る指標'),
+            h('dt', null, t('brief.you')), h('dd', null, sc.role, h('br'), h('span', { class: 'muted' }, sc.roleNote)),
+            h('dt', null, t('brief.turns')), h('dd', null, t('brief.turnsN', { n: sc.turns.length })),
+            h('dt', null, t('brief.time')), h('dd', null, t('brief.timeN', { s: sc.time }))),
+          h('h3', null, t('brief.meters')),
           h('div', { class: 'meters' }, sc.meters.map(m => meterRow(m.n, m.v))),
-          h('p', { class: 'note' }, '入電の中には誤報が混じる。「裏を取る」と真偽を確かめられるが、持ち時間を使う。時間切れになると、決められなかったこと自体が決断になる。'),
-          h('p', { class: 'note' }, 'キー操作: 1・2・3で選択 / Iで裏を取る / Enterで決裁'))));
+          h('p', { class: 'note' }, t('brief.note1')),
+          h('p', { class: 'note' }, t('brief.note2')))));
     bindSfx(root);
     show('s-brief');
     skipTyping = false;
@@ -291,29 +302,29 @@
   /* ════════════════ 作戦: 局面 ════════════════ */
   let T = null; // 現在の局面の状態
   function renderTurn() {
-    const sc = G.sc, t = sc.turns[G.ti];
+    const sc = G.sc, tr = sc.turns[G.ti];
     T = { sel: null, inv: false, timeout: false, decided: false };
     skipTyping = false;
     S.play('tension', sc.bgm);
     S.setIntensity(0.12 + G.ti * 0.06);
-    let sit = t.sit;
-    (t.sitIf || []).forEach(c => { if (G.m[c.m] >= c.min) sit = c.t; });
+    let sit = tr.sit;
+    (tr.sitIf || []).forEach(c => { if (G.m[c.m] >= c.min) sit = c.t; });
 
     const root = $('#turn'); root.innerHTML = '';
     const ring = timerRing('ring');
     const reportsEl = h('div', { class: 'reports', 'aria-live': 'polite', onclick: () => { skipTyping = true; } });
-    const invBtn = h('button', { class: 'btn ghost small', type: 'button', id: 'inv', disabled: true, onclick: investigate }, `裏を取る(-${t.inv.c}秒)`);
+    const invBtn = h('button', { class: 'btn ghost small', type: 'button', id: 'inv', disabled: true, onclick: investigate }, t('turn.inv', { s: tr.inv.c }));
     const invNote = h('div', { class: 'inv-note', hidden: true });
     const adBtn = Ads.available && !G.rewardUsed
-      ? h('button', { class: 'btn ghost small', type: 'button', id: 'adtime', disabled: true, onclick: e => watchAdForTime(e.currentTarget) }, '広告を見て+30秒')
+      ? h('button', { class: 'btn ghost small', type: 'button', id: 'adtime', disabled: true, onclick: e => watchAdForTime(e.currentTarget) }, t('turn.ad'))
       : null;
     const advEl = h('div', { class: 'advisors' });
     const conf = h('input', { type: 'range', id: 'conf', min: '50', max: '100', step: '5', value: '70' });
     const confVal = h('span', { class: 'conf-val' }, '70%');
     conf.addEventListener('input', () => { confVal.textContent = conf.value + '%'; S.sfx.slide(conf.value - 40); });
-    const reason = h('input', { type: 'text', id: 'reason', maxlength: '60', placeholder: '判断の理由をひとこと(任意)', autocomplete: 'off' });
-    const go = h('button', { class: 'btn', type: 'button', id: 'go', disabled: true, onclick: () => decide(false) }, '決裁する');
-    const opts = h('div', { class: 'opts', role: 'group', 'aria-label': '選択肢' }, t.opt.map((o, i) =>
+    const reason = h('input', { type: 'text', id: 'reason', maxlength: '60', placeholder: t('turn.reason.ph'), autocomplete: 'off' });
+    const go = h('button', { class: 'btn', type: 'button', id: 'go', disabled: true, onclick: () => decide(false) }, t('turn.go'));
+    const opts = h('div', { class: 'opts', role: 'group', 'aria-label': t('turn.opts') }, tr.opt.map((o, i) =>
       h('button', { class: 'opt', type: 'button', 'aria-pressed': 'false', 'data-i': String(i), onclick: () => pick(i) },
         h('span', { class: 'letter' }, LET[i]),
         h('span', null, h('div', { class: 'ol' }, o.l), h('div', { class: 'od' }, o.d)))));
@@ -321,25 +332,25 @@
     root.append(
       h('div', { class: 'panel turn-head' },
         h('div', null,
-          h('div', { class: 'eyebrow' }, `${sc.title} — 局面 ${G.ti + 1} / ${sc.turns.length}`),
-          h('div', { class: 'clock' }, t.clock),
-          h('h2', null, t.title)),
+          h('div', { class: 'eyebrow' }, t('turn.phase', { title: sc.title, i: G.ti + 1, n: sc.turns.length })),
+          h('div', { class: 'clock' }, tr.clock),
+          h('h2', null, tr.title)),
         h('div', { class: 'meters', id: 'meters' }, sc.meters.map(m => meterRow(m.n, G.m[m.k], m.k))),
         ring),
       h('div', { class: 'turn-body' },
         h('div', { class: 'col' },
           h('div', { class: 'panel sit' }, sit),
-          h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, '入電'), h('span', { class: 'row', style: 'gap:8px' }, adBtn, invBtn)),
+          h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, t('turn.reports')), h('span', { class: 'row', style: 'gap:8px' }, adBtn, invBtn)),
           reportsEl, invNote),
         h('div', { class: 'col' },
-          h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, 'AI参謀の進言')),
+          h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, t('turn.advice'))),
           advEl)),
       h('div', { class: 'panel decide' },
-        h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, '決裁'), h('span', { class: 'kbd' }, '1・2・3で選択 / Enterで決裁')),
+        h('div', { class: 'section-label' }, h('span', { class: 'eyebrow' }, t('turn.decide')), h('span', { class: 'kbd' }, t('turn.keys'))),
         opts,
         h('div', { class: 'decide-row' },
-          h('div', { class: 'field' }, h('label', { for: 'conf' }, 'この判断で狙いどおりになる確信度 ', confVal), conf),
-          h('div', { class: 'field' }, h('label', { for: 'reason' }, '理由'), reason),
+          h('div', { class: 'field' }, h('label', { for: 'conf' }, t('turn.conf'), confVal), conf),
+          h('div', { class: 'field' }, h('label', { for: 'reason' }, t('turn.reason')), reason),
           go)));
     bindSfx(root);
     show('s-turn');
@@ -348,10 +359,10 @@
     // 入電と参謀の進言を順に流し、終わったら時計を動かす
     (async () => {
       const myTurn = G.ti;
-      for (const r of t.rep) {
+      for (const r of tr.rep) {
         if (!T || G.ti !== myTurn || screen !== 's-turn') return;
         const body = h('div', { class: 'body' });
-        const card = h('article', { class: 'report' }, h('div', { class: 'from' }, h('span', null, 'FROM: ' + r.f), h('span', null, t.clock.split(' ')[0])), body);
+        const card = h('article', { class: 'report' }, h('div', { class: 'from' }, h('span', null, 'FROM: ' + r.f), h('span', null, dayOf(tr.clock))), body);
         reportsEl.append(card);
         if (sc.id === 'apollo' && /CAPCOM|宇宙船通信/.test(r.f)) S.sfx.quindar(); else S.sfx.incoming();
         await typeInto(body, r.t, 10);
@@ -359,15 +370,15 @@
         await sleep(skipTyping ? 0 : 160);
       }
       ['c', 'a', 'd'].forEach(k => {
-        const [pi, text, cf] = t.adv[k];
+        const [pi, text, cf] = tr.adv[k];
         const a = ADV[k];
         advEl.append(h('article', { class: 'panel adv' },
           h('div', { class: 'adv-top' },
             h('span', { class: `glyph g-${k}` }, a.glyph),
             h('span', { class: 'adv-name' }, a.name, h('small', null, a.stance)),
-            h('span', { class: 'adv-rec' }, '推奨 ', h('b', null, LET[pi]))),
+            h('span', { class: 'adv-rec' }, t('turn.rec'), h('b', null, LET[pi]))),
           h('p', null, text),
-          h('div', { class: `confbar g-${k}` }, h('span', null, '自信度'), h('span', { class: 'bar' }, h('span', { style: `width:${cf}%` })), h('span', null, cf + '%'))));
+          h('div', { class: `confbar g-${k}` }, h('span', null, t('turn.advconf')), h('span', { class: 'bar' }, h('span', { style: `width:${cf}%` })), h('span', null, cf + '%'))));
       });
       S.sfx.radio();
       if (!T || G.ti !== myTurn || screen !== 's-turn') return;
@@ -389,21 +400,21 @@
   }
   function investigate() {
     if (!T || T.inv || T.decided) return;
-    const t = G.sc.turns[G.ti];
+    const tr = G.sc.turns[G.ti];
     T.inv = true;
-    if (timer) timer.left = Math.max(1, timer.left - t.inv.c);
+    if (timer) timer.left = Math.max(1, timer.left - tr.inv.c);
     $('#inv').disabled = true;
-    $('#inv').textContent = '裏取り済み';
+    $('#inv').textContent = t('turn.inv.done');
     S.sfx.investigate();
     const note = $('#turn .inv-note');
     note.hidden = false;
     note.textContent = '';
-    typeInto(note, '裏取りの結果: ' + t.inv.t, 12);
-    t.rep.forEach((r, i) => {
+    typeInto(note, t('turn.inv.result') + tr.inv.t, 12);
+    tr.rep.forEach((r, i) => {
       if (!r.bad) return;
       const card = $$('#turn .report')[i];
       if (!card) return;
-      setTimeout(() => { card.classList.add('flagged'); card.append(h('span', { class: 'stampmark' }, '要注意')); S.sfx.flag(); }, 600);
+      setTimeout(() => { card.classList.add('flagged'); card.append(h('span', { class: 'stampmark' }, t('turn.flag'))); S.sfx.flag(); }, 600);
     });
   }
   document.addEventListener('keydown', e => {
@@ -425,16 +436,16 @@
     if (!T || T.decided) return;
     if (!isTimeout && T.sel == null) return;
     T.decided = true;
-    const sc = G.sc, t = sc.turns[G.ti];
+    const sc = G.sc, tr = sc.turns[G.ti];
     const limit = sc.time;
     const left = timer ? timer.left : 0;
     stopTimer();
     let i = T.sel;
     if (isTimeout) {
-      const di = t.opt.findIndex(o => o.def);
-      i = di >= 0 ? di : t.opt.reduce((m, o, k) => (o.q < t.opt[m].q ? k : m), 0);
+      const di = tr.opt.findIndex(o => o.def);
+      i = di >= 0 ? di : tr.opt.reduce((m, o, k) => (o.q < tr.opt[m].q ? k : m), 0);
     }
-    const o = t.opt[i];
+    const o = tr.opt[i];
     const success = !isTimeout && Math.random() < o.p;
     const fx = success ? o.fx : (o.fxF || o.fx);
     const before = { ...G.m };
@@ -443,8 +454,8 @@
       i, timeout: isTimeout, conf: isTimeout ? null : Number($('#conf').value) / 100,
       reason: isTimeout ? '' : $('#reason').value.trim(), success,
       left: isTimeout ? 0 : left, limit, inv: T.inv,
-      q: isTimeout ? 0 : o.q, r: o.r, h: o.h, hadBad: t.rep.some(r => r.bad),
-      flawPick: t.flaw ? t.adv[t.flaw][0] : null
+      q: isTimeout ? 0 : o.q, r: o.r, h: o.h, hadBad: tr.rep.some(r => r.bad),
+      flawPick: tr.flaw ? tr.adv[tr.flaw][0] : null
     });
     $$('#turn button, #turn input').forEach(b => { b.disabled = true; });
     if (isTimeout) { S.sfx.timeout(); S.setIntensity(0.3); } else S.sfx.stamp();
@@ -458,16 +469,16 @@
     const next = h('button', { class: 'btn', type: 'button', onclick: () => {
       S.sfx.click(); ov.remove();
       if (last) { G.done = true; renderEnding(); } else { G.ti++; renderTurn(); }
-    } }, last ? '結末を見る' : '次の局面へ');
-    const ov = h('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': '決裁の結果' },
+    } }, last ? t('v.end') : t('v.next'));
+    const ov = h('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('v.aria') },
       h('div', { class: 'panel verdict' },
-        h('div', { class: 'big-stamp' + (isTimeout ? '' : ' go') }, isTimeout ? '時間切れ' : '決裁'),
+        h('div', { class: 'big-stamp' + (isTimeout ? '' : ' go') }, isTimeout ? t('v.stamp.timeout') : t('v.stamp')),
         h('div', { class: 'eyebrow' }, `${LET[G.log[G.log.length - 1].i]}: ${o.l}`),
         h('div', { class: 'row' }, isTimeout
-          ? h('span', { class: 'chip ng' }, '決められないまま時が過ぎた')
-          : h('span', { class: 'chip ' + (success ? 'ok' : 'ng') }, success ? '狙いどおりに進んだ' : '裏目に出た')),
-        h('h3', null, isTimeout ? '時計の針は待ってくれなかった。' : (success ? '状況は動いた' : '思わぬ方向へ')),
-        h('p', null, isTimeout ? `判断が下されないまま、事態は「${o.l}」と同じ方向に流れた。${o.ng}` : (success ? o.ok : o.ng)),
+          ? h('span', { class: 'chip ng' }, t('v.chip.timeout'))
+          : h('span', { class: 'chip ' + (success ? 'ok' : 'ng') }, success ? t('v.chip.ok') : t('v.chip.ng'))),
+        h('h3', null, isTimeout ? t('v.h.timeout') : (success ? t('v.h.ok') : t('v.h.ng'))),
+        h('p', null, isTimeout ? t('v.timeout', { l: o.l }) + o.ng : (success ? o.ok : o.ng)),
         h('div', { class: 'deltas' }, sc.meters.map(m => {
           const d = Math.round(G.m[m.k] - before[m.k]);
           return h('div', { class: 'delta' },
@@ -475,7 +486,7 @@
             h('span', { class: 'meter', style: 'grid-template-columns:1fr' }, h('span', { class: 'bar' }, h('span', { class: G.m[m.k] < 30 ? 'low' : G.m[m.k] >= 75 ? 'high' : '', style: `width:${before[m.k]}%`, 'data-to': String(G.m[m.k]) }))),
             h('span', { class: 'd ' + (d > 0 ? 'plus' : d < 0 ? 'minus' : 'zero') }, (d > 0 ? '+' : '') + d));
         })),
-        h('p', { class: 'note' }, '史実でどう判断されたかは、作戦の後の振り返りで明かされる。'),
+        h('p', { class: 'note' }, t('v.note')),
         h('div', { class: 'row' }, next)));
     document.body.append(ov);
     bindSfx(ov);
@@ -517,12 +528,12 @@
     if (r === 'rewarded' && timer && T && !T.decided) {
       G.rewardUsed = true;
       timer.left += 30; timer.limit += 30;
-      btn.textContent = '+30秒 延長済み';
+      btn.textContent = t('turn.ad.done');
       S.sfx.success();
-      toast('持ち時間が30秒延びました');
+      toast(t('turn.ad.toast'));
     } else {
       btn.disabled = false;
-      if (r === 'unavailable') toast('いまは広告を読み込めませんでした');
+      if (r === 'unavailable') toast(t('turn.ad.ng'));
     }
   }
 
@@ -539,7 +550,7 @@
     const sr = dec.length ? avg(dec.map(l => l.success ? 1 : 0)) : 0;
     const diff = avgConf - sr;
     const calib = dec.length ? Math.round(clamp(100 - Math.abs(diff) * 200, 0, 100)) : 0;
-    const calibLabel = !dec.length ? '判定なし' : diff > 0.12 ? '自信過剰' : diff < -0.12 ? '控えめすぎ' : 'ほぼ適切';
+    const calibLabel = !dec.length ? 'none' : diff > 0.12 ? 'over' : diff < -0.12 ? 'under' : 'ok';
     const risk = Math.round(avg(log.map(l => l.r)) / 2 * 100);
     const hm = Math.round((avg(log.map(l => l.h)) + 2) / 4 * 100);
     const timeouts = log.filter(l => l.timeout).length;
@@ -556,7 +567,7 @@
     const tierIdx = sc.endings.indexOf(end);
     G.run = {
       sc: sc.id, at: Date.now(), proc: R.proc, out: R.out, speed: R.speed, info: R.info, ai: R.ai, calib: R.calib,
-      risk: R.risk, hm: R.hm, c: G.log.map(l => l.timeout ? -1 : l.i), k: G.log.map(l => l.conf), end: end.title
+      risk: R.risk, hm: R.hm, c: G.log.map(l => l.timeout ? -1 : l.i), k: G.log.map(l => l.conf), end: end.title, tier: tierIdx
     };
     store.runs.push(G.run);
     if (store.runs.length > 60) store.runs = store.runs.slice(-60);
@@ -566,15 +577,15 @@
     setTimeout(() => { if (screen === 's-ending') S.play('review'); }, 4200);
     const root = $('#ending'); root.innerHTML = '';
     root.append(h('div', { class: 'ending' },
-      h('div', { class: 'eyebrow' }, `${sc.title} — 作戦終了`),
+      h('div', { class: 'eyebrow' }, t('end.eyebrow', { title: sc.title })),
       h('h1', null, end.title),
       h('p', { class: 'text' }, end.text),
       h('div', { class: 'panel', style: 'padding:16px' }, h('div', { class: 'meters' }, sc.meters.map(m => meterRow(m.n, G.m[m.k], m.k)))),
-      h('div', { class: 'panel epilogue' }, h('div', { class: 'eyebrow', style: 'margin-bottom:6px' }, '史実では'), h('p', null, sc.epilogue)),
-      shareBar(`司令塔「${sc.title}」で${sc.role}として決断した。結末は「${end.title}」。判断の質 ${R.proc} / 結果 ${R.out}`),
+      h('div', { class: 'panel epilogue' }, h('div', { class: 'eyebrow', style: 'margin-bottom:6px' }, t('end.history')), h('p', null, sc.epilogue)),
+      shareBar(t('share.end', { title: sc.title, role: sc.role, end: end.title, p: R.proc, o: R.out })),
       h('div', { class: 'row' },
-        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.reveal(); renderReview(); } }, '判断を振り返る'),
-        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, 'もう一度挑む'))));
+        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.reveal(); renderReview(); } }, t('end.review')),
+        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, t('end.retry')))));
     bindSfx(root);
     show('s-ending');
   }
@@ -582,34 +593,32 @@
   /* ════════════════ 振り返り ════════════════ */
   function quadrant(proc, out) {
     const gp = proc >= 60, go = out >= 60;
-    if (gp && go) return { k: 'gg', title: '実力の勝利', text: '筋の良い判断が、良い結果につながった。' };
-    if (gp && !go) return { k: 'gb', title: '良い判断、不運な結果', text: '判断の筋は良かった。結果が悪かったのは運の要素も大きい。この判断の仕方は続けてよい。' };
-    if (!gp && go) return { k: 'bg', title: '運に救われた', text: '結果は良かったが、判断の筋は危うかった。結果だけで自分の判断を評価しないこと。同じやり方は、次は裏目に出るかもしれない。' };
-    return { k: 'bb', title: '必然の敗北', text: '判断の筋も結果も厳しかった。どの前提が崩れていたのかを、局面ごとに見直してみよう。' };
+    const k = gp ? (go ? 'gg' : 'gb') : (go ? 'bg' : 'bb');
+    return { k, title: t(`q.${k}.t`), text: t(`q.${k}`) };
   }
   function tendencies(R) {
     const out = [];
-    if (R.speed < 35) out.push('情報が揃うのを待ちすぎる傾向があります。待っている間にも状況は動きます。');
-    else if (R.speed > 80 && R.info < 60) out.push('決断は速いものの、裏取りを省きがちです。誤報が混じっていても気づけません。');
-    else if (R.speed > 75) out.push('決断が速く、時間を味方につけています。');
-    if (R.info >= 85) out.push('入電の真偽を確かめる習慣が身についています。');
-    else if (R.info < 50) out.push('入電を額面どおりに受け取りがちです。一番都合のいい報告ほど疑ってみましょう。');
-    if (R.ai < 50) out.push('自信ありげなAI参謀の提案に流されやすい傾向があります。提案の数字ではなく、その数字の前提を確かめましょう。');
-    else if (R.ai >= 80) out.push('AI参謀の理屈の穴を見抜けています。');
-    if (R.calibLabel === '自信過剰') out.push(`確信度が平均${Math.round(R.avgConf * 100)}%だったのに対し、狙いどおりに進んだのは${Math.round(R.sr * 100)}%。自信過剰の傾向があります。`);
-    else if (R.calibLabel === '控えめすぎ') out.push(`確信度(平均${Math.round(R.avgConf * 100)}%)より、実際の成功率(${Math.round(R.sr * 100)}%)の方が高めでした。もう少し自分の判断を信じてよさそうです。`);
-    else if (R.calibLabel === 'ほぼ適切') out.push('確信度と実際の結果が釣り合っています。自分の判断の確かさを正しく見積もれています。');
-    if (R.risk > 65) out.push('大胆な選択を好みます。勝てる場面では強みですが、失敗の大きさも見積もりましょう。');
-    else if (R.risk < 30) out.push('慎重な選択を好みます。守りが固い反面、動くべき時に遅れないよう注意しましょう。');
-    if (R.timeouts) out.push(`${R.timeouts}回、時間切れになりました。決めないことも決断の一つです。`);
+    if (R.speed < 35) out.push(t('tend.slow'));
+    else if (R.speed > 80 && R.info < 60) out.push(t('tend.rush'));
+    else if (R.speed > 75) out.push(t('tend.fast'));
+    if (R.info >= 85) out.push(t('tend.infoGood'));
+    else if (R.info < 50) out.push(t('tend.infoBad'));
+    if (R.ai < 50) out.push(t('tend.aiBad'));
+    else if (R.ai >= 80) out.push(t('tend.aiGood'));
+    if (R.calibLabel === 'over') out.push(t('tend.over', { c: Math.round(R.avgConf * 100), s: Math.round(R.sr * 100) }));
+    else if (R.calibLabel === 'under') out.push(t('tend.under', { c: Math.round(R.avgConf * 100), s: Math.round(R.sr * 100) }));
+    else if (R.calibLabel === 'ok') out.push(t('tend.cal'));
+    if (R.risk > 65) out.push(t('tend.bold'));
+    else if (R.risk < 30) out.push(t('tend.careful'));
+    if (R.timeouts) out.push(t('tend.timeouts', { n: R.timeouts }));
     return out;
   }
   function radarSvg(series) {
-    const axes = ['判断の質', '決断速度', '情報の見極め', 'AI参謀の見極め', '確信度の精度'];
     const keys = ['proc', 'speed', 'info', 'ai', 'calib'];
+    const axes = keys.map(k => t('axis.' + k));
     const W = 440, Hh = 300, cx = 220, cy = 155, R = 100;
     const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; return [cx + Math.cos(a) * R * v / 100, cy + Math.sin(a) * R * v / 100]; };
-    let s = `<svg class="radar" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="判断の5つの軸">`;
+    let s = `<svg class="radar" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${t('axis.aria')}">`;
     [25, 50, 75, 100].forEach(v => { s += `<polygon points="${keys.map((_, i) => pt(i, v).join(',')).join(' ')}" fill="none" stroke="var(--rule)" stroke-width="1"/>`; });
     keys.forEach((_, i) => { const [x, y] = pt(i, 100); s += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--rule)"/>`; });
     series.forEach(se => {
@@ -632,7 +641,7 @@
       h('div', { class: 'ends' }, h('span', null, left), h('span', null, right)));
   }
   function encodeRun(run) {
-    const o = { v: 1, s: run.sc, n: store.name || '名無しの司令', c: run.c, k: run.k, p: run.proc, o: run.out, e: run.end };
+    const o = { v: 1, s: run.sc, n: store.name || t('anon'), c: run.c, k: run.k, p: run.proc, o: run.out, e: run.end, t: run.tier };
     return 'SRT1.' + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
   }
   function decodeRun(code) {
@@ -644,17 +653,17 @@
     } catch (e) { return null; }
   }
   async function copyText(text, fallbackEl) {
-    try { await navigator.clipboard.writeText(text); toast('コピーしました'); S.sfx.select(); }
+    try { await navigator.clipboard.writeText(text); toast(t('copy.ok')); S.sfx.select(); }
     catch (e) {
       if (fallbackEl) { const r = document.createRange(); r.selectNodeContents(fallbackEl); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
-      toast('コピーできませんでした。選択された文字を手動でコピーしてください');
+      toast(t('copy.ng'));
     }
   }
 
   /* ── シェア ── */
   const SHARE_URL = 'https://techgym.jp/column/claude-code-game-shireito/';
   function shareBar(text) {
-    const full = `${text}\n#司令塔 #判断力の筋トレ`;
+    const full = `${text}\n${t('share.tags')}`;
     const enc = encodeURIComponent;
     const textEl = h('div', { class: 'codebox share-text' }, `${full}\n${SHARE_URL}`);
     const link = (label, href) => h('a', { class: 'btn ghost small', href, target: '_blank', rel: 'noopener', onclick: () => S.sfx.select() }, label);
@@ -662,23 +671,23 @@
     if (nativeShare) {
       // アプリでは Android の共有メニューを出す
       return h('div', { class: 'panel share' },
-        h('div', { class: 'eyebrow' }, '結果をシェアする'),
+        h('div', { class: 'eyebrow' }, t('share.h')),
         textEl,
         h('div', { class: 'row' },
           h('button', { class: 'btn small', type: 'button', onclick: async () => {
             S.sfx.select();
-            try { await nativeShare.share({ title: '司令塔', text: full, url: SHARE_URL, dialogTitle: '結果をシェア' }); } catch (e) { /* キャンセル */ }
-          } }, 'シェアする'),
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, '文章をコピー')));
+            try { await nativeShare.share({ title: t('share.app'), text: full, url: SHARE_URL, dialogTitle: t('share.dialog') }); } catch (e) { /* キャンセル */ }
+          } }, t('share.native')),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, t('share.copy'))));
     }
     return h('div', { class: 'panel share' },
-      h('div', { class: 'eyebrow' }, '結果をシェアする'),
+      h('div', { class: 'eyebrow' }, t('share.h')),
       textEl,
       h('div', { class: 'row' },
-        link('Xでポスト', `https://twitter.com/intent/tweet?text=${enc(full)}&url=${enc(SHARE_URL)}`),
-        link('LINEで送る', `https://line.me/R/share?text=${enc(full + '\n' + SHARE_URL)}`),
+        link(t('share.x'), `https://twitter.com/intent/tweet?text=${enc(full)}&url=${enc(SHARE_URL)}`),
+        link(t('share.line'), `https://line.me/R/share?text=${enc(full + '\n' + SHARE_URL)}`),
         link('Facebook', `https://www.facebook.com/sharer/sharer.php?u=${enc(SHARE_URL)}`),
-        h('button', { class: 'btn small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, '文章をコピー')));
+        h('button', { class: 'btn small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, t('share.copy'))));
   }
 
   function renderReview() {
@@ -693,106 +702,106 @@
     // 総合
     panels.sum = h('div', null,
       h('div', { class: 'scores' },
-        scoreTile('判断の質', R.proc, '結果に関係なく、判断の筋の良さ'),
-        scoreTile('結果', R.out, `指標の平均。結末「${G.end.title}」`),
-        scoreTile('確信度の精度', R.calib, R.calibLabel),
-        scoreTile('史実と同じ判断', `${R.hist}/${sc.turns.length}`, '一致が多いほど良いとは限らない')),
+        scoreTile(t('rev.proc'), R.proc, t('rev.proc.s')),
+        scoreTile(t('rev.out'), R.out, t('rev.out.s', { end: G.end.title })),
+        scoreTile(t('rev.calib'), R.calib, t('calib.' + R.calibLabel)),
+        scoreTile(t('rev.hist'), `${R.hist}/${sc.turns.length}`, t('rev.hist.s'))),
       h('div', { class: 'review-grid' },
         h('div', { class: 'panel' },
-          h('h3', null, '判断と結果のマトリクス'),
+          h('h3', null, t('rev.quad')),
           quadEl(R.proc, R.out, qd),
-          h('p', null, h('b', { style: 'color:var(--amber)' }, qd.title), '。', qd.text)),
+          h('p', null, h('b', { style: 'color:var(--amber)' }, qd.title), EN ? '. ' : '。', qd.text)),
         h('div', { class: 'panel' },
-          h('h3', null, '判断の5つの軸'),
+          h('h3', null, t('rev.radar')),
           h('div', { html: radarSvg([
             { v: { proc: R.proc, speed: R.speed, info: R.info, ai: R.ai, calib: R.calib }, fill: 'rgba(240,170,50,.18)', stroke: 'var(--amber)' },
             ...(avgRun ? [{ v: avgRun, fill: 'none', stroke: 'var(--cool)', dash: true }] : [])]) }),
-          h('div', { class: 'legend' }, h('span', null, h('i', { style: 'background:var(--amber)' }), '今回'), avgRun ? h('span', null, h('i', { style: 'background:var(--cool)' }), 'これまでの平均') : null)),
+          h('div', { class: 'legend' }, h('span', null, h('i', { style: 'background:var(--amber)' }), t('rev.now')), avgRun ? h('span', null, h('i', { style: 'background:var(--cool)' }), t('rev.avg')) : null)),
         h('div', { class: 'panel' },
-          h('h3', null, 'あなたの判断の癖'),
-          h('ul', { class: 'tendencies' }, tendencies(R).map(t => h('li', null, t)))),
+          h('h3', null, t('rev.tend')),
+          h('ul', { class: 'tendencies' }, tendencies(R).map(x => h('li', null, x)))),
         h('div', { class: 'panel' },
-          h('h3', null, '判断の向き'),
-          spectrum('リスクの取り方', '慎重', '大胆', R.risk),
-          spectrum('優先したもの', '任務の達成', '人命と長期', R.hm),
-          h('p', { class: 'note' }, 'この2つに良し悪しはない。自分がどちらに傾きやすいかを知っておくための目盛りだ。'))));
+          h('h3', null, t('rev.lean')),
+          spectrum(t('rev.risk'), t('rev.risk.l'), t('rev.risk.r'), R.risk),
+          spectrum(t('rev.prio'), t('rev.prio.l'), t('rev.prio.r'), R.hm),
+          h('p', { class: 'note' }, t('rev.lean.note')))));
 
     // 局面ごと
     panels.turns = h('div', { class: 'tcards' }, G.log.map((l, k) => {
-      const t = sc.turns[k], o = t.opt[l.i];
-      const hi = t.opt.findIndex(x => x.hist);
-      const bad = t.rep.find(r => r.bad);
+      const tr = sc.turns[k], o = tr.opt[l.i];
+      const hi = tr.opt.findIndex(x => x.hist);
+      const bad = tr.rep.find(r => r.bad);
       return h('article', { class: 'panel tcard' },
         h('div', { class: 'tcard-head' },
-          h('h3', null, `${k + 1}. ${t.title}`),
+          h('h3', null, `${k + 1}. ${tr.title}`),
           h('span', { class: 'row', style: 'gap:6px' },
-            l.timeout ? h('span', { class: 'chip ng' }, '時間切れ') : h('span', { class: 'chip ' + (l.success ? 'ok' : 'ng') }, l.success ? '狙いどおり' : '裏目'),
-            l.inv ? h('span', { class: 'chip' }, '裏取りした') : null)),
+            l.timeout ? h('span', { class: 'chip ng' }, t('rev.timeout')) : h('span', { class: 'chip ' + (l.success ? 'ok' : 'ng') }, l.success ? t('rev.ok') : t('rev.ng')),
+            l.inv ? h('span', { class: 'chip' }, t('rev.inv')) : null)),
         h('div', { class: 'compare2' },
           h('div', null,
-            h('span', { class: 'who' }, 'あなたの判断'),
-            h('span', { class: 'what' }, l.timeout ? `時間切れ(${LET[l.i]}: ${o.l} と同じ流れに)` : `${LET[l.i]}: ${o.l}`),
-            h('span', { class: 'muted', style: 'font-size:13px' }, '判断の質 ', qbar(l.q), l.timeout ? '' : `  確信度 ${Math.round(l.conf * 100)}%`),
-            l.reason ? h('span', { style: 'font-size:13px' }, `理由: 「${l.reason}」`) : null),
+            h('span', { class: 'who' }, t('rev.mine')),
+            h('span', { class: 'what' }, l.timeout ? t('rev.mine.timeout', { x: `${LET[l.i]}: ${o.l}` }) : `${LET[l.i]}: ${o.l}`),
+            h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(l.q), l.timeout ? '' : t('rev.conf', { c: Math.round(l.conf * 100) })),
+            l.reason ? h('span', { style: 'font-size:13px' }, t('rev.reason', { r: l.reason })) : null),
           h('div', null,
-            h('span', { class: 'who' }, '史実の判断'),
-            h('span', { class: 'what' }, `${LET[hi]}: ${t.opt[hi].l}`),
-            h('span', { class: 'muted', style: 'font-size:13px' }, '判断の質 ', qbar(t.opt[hi].q)))),
-        h('p', null, t.hist),
+            h('span', { class: 'who' }, t('rev.histpick')),
+            h('span', { class: 'what' }, `${LET[hi]}: ${tr.opt[hi].l}`),
+            h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(tr.opt[hi].q)))),
+        h('p', null, tr.hist),
         h('div', { class: 'reveal' },
-          bad ? h('div', { class: 'item' }, h('b', null, '誤報'), h('span', null, `「${bad.f}」の報告: ${bad.why}`)) : null,
-          t.flaw ? h('div', { class: 'item' }, h('b', null, `${ADV[t.flaw].name}の穴`), h('span', null, `推奨は${LET[t.adv[t.flaw][0]]}(自信度${t.adv[t.flaw][2]}%)。${t.flawWhy}`, l.i === t.adv[t.flaw][0] && !l.timeout ? h('b', { style: 'color:var(--signal);display:block' }, 'あなたはこの進言に従った。') : null)) : h('div', { class: 'item' }, h('b', null, 'AI参謀'), h('span', null, 'この局面では、参謀の推論に大きな穴はなかった。')),
-          h('div', { class: 'item' }, h('b', null, '判断のポイント'), h('span', { class: 'lesson' }, t.lesson))));
+          bad ? h('div', { class: 'item' }, h('b', null, t('rev.bad')), h('span', null, t('rev.bad.t', { f: bad.f, why: bad.why }))) : null,
+          tr.flaw ? h('div', { class: 'item' }, h('b', null, t('rev.flaw', { name: ADV[tr.flaw].name })), h('span', null, t('rev.flaw.t', { x: LET[tr.adv[tr.flaw][0]], c: tr.adv[tr.flaw][2] }) + tr.flawWhy, l.i === tr.adv[tr.flaw][0] && !l.timeout ? h('b', { style: 'color:var(--signal);display:block' }, t('rev.followed')) : null)) : h('div', { class: 'item' }, h('b', null, t('rev.noflaw.h')), h('span', null, t('rev.noflaw'))),
+          h('div', { class: 'item' }, h('b', null, t('rev.lesson')), h('span', { class: 'lesson' }, tr.lesson))));
     }));
 
     // もしも年表
     panels.tl = h('div', null,
-      h('p', { class: 'muted', style: 'margin-bottom:12px' }, 'あなたが史実と違う道を選んだ局面では、世界線が分かれていく。'),
+      h('p', { class: 'muted', style: 'margin-bottom:12px' }, t('tl.note')),
       h('div', { class: 'timeline' },
-        h('div', { class: 'tl-head' }, h('span', { class: 'when' }, '局面'), h('span', null, '史実'), h('span', null, 'あなたの世界線')),
+        h('div', { class: 'tl-head' }, h('span', { class: 'when' }, t('tl.when')), h('span', null, t('tl.hist')), h('span', null, t('tl.mine'))),
         G.log.map((l, k) => {
-          const t = sc.turns[k], o = t.opt[l.i];
+          const tr = sc.turns[k], o = tr.opt[l.i];
           const same = !!o.hist && !l.timeout;
           return h('div', { class: 'tl-row' },
-            h('span', { class: 'when' }, t.clock.split(' ')[0]),
-            h('span', null, t.histTl),
-            h('span', { class: 'mine ' + (same ? 'same' : 'diverge') }, same ? '史実と同じ道' : (l.timeout ? '時間切れ: ' : '') + (o.tl || o.l)));
+            h('span', { class: 'when' }, dayOf(tr.clock)),
+            h('span', null, tr.histTl),
+            h('span', { class: 'mine ' + (same ? 'same' : 'diverge') }, same ? t('tl.same') : (l.timeout ? t('tl.timeout') : '') + (o.tl || o.l)));
         }),
         h('div', { class: 'tl-row' },
-          h('span', { class: 'when' }, '結末'),
+          h('span', { class: 'when' }, t('tl.end')),
           h('span', null, sc.epilogue),
-          h('span', { class: 'mine diverge' }, `「${G.end.title}」 ${G.end.text}`))));
+          h('span', { class: 'mine diverge' }, `${q(G.end.title)} ${G.end.text}`))));
 
     // 共有
     const code = encodeRun(G.run);
     const codeEl = h('div', { class: 'codebox', id: 'sharecode' }, code);
-    const summary = `司令塔「${sc.title}」 判断の質${R.proc} / 結果${R.out} / 結末「${G.end.title}」`;
+    const summary = t('cmp.summary', { title: sc.title, p: R.proc, o: R.out, end: G.end.title });
     const sumEl = h('div', { class: 'codebox' }, summary);
     panels.share = h('div', { class: 'stack', style: 'max-width:720px' },
-      h('p', null, '同じ作戦を遊んだ友人と、局面ごとの判断を比べられます。下の対戦コードを送り、友人は「友人と比べる」に貼り付けてください。'),
+      h('p', null, t('cmp.intro')),
       codeEl,
       h('div', { class: 'row' },
-        h('button', { class: 'btn', type: 'button', onclick: () => copyText(code, codeEl) }, '対戦コードをコピー'),
-        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); goCompare(); } }, '友人のコードを貼り付ける')),
-      h('div', { class: 'eyebrow', style: 'margin-top:12px' }, 'ひとこと共有用'),
+        h('button', { class: 'btn', type: 'button', onclick: () => copyText(code, codeEl) }, t('cmp.copy')),
+        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); goCompare(); } }, t('cmp.paste'))),
+      h('div', { class: 'eyebrow', style: 'margin-top:12px' }, t('cmp.short')),
       sumEl,
-      h('button', { class: 'btn ghost small', type: 'button', style: 'justify-self:start', onclick: () => copyText(summary, sumEl) }, '文章をコピー'));
+      h('button', { class: 'btn ghost small', type: 'button', style: 'justify-self:start', onclick: () => copyText(summary, sumEl) }, t('share.copy')));
 
-    const tabs = [['sum', '総合'], ['turns', '局面ごと'], ['tl', 'もしも年表'], ['share', '比べる']];
+    const tabs = ['sum', 'turns', 'tl', 'share'].map(k => [k, t('tab.' + k)]);
     const tabBar = h('div', { class: 'tabs', role: 'tablist' }, tabs.map(([k, l], i) =>
       h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(i === 0), id: 'tab-' + k, onclick: () => selTab(k) }, l)));
     const body = h('div', { id: 'review-body' });
     function selTab(k) {
-      $$('#review .tab').forEach(t => t.setAttribute('aria-selected', String(t.id === 'tab-' + k)));
+      $$('#review .tab').forEach(b => b.setAttribute('aria-selected', String(b.id === 'tab-' + k)));
       body.innerHTML = ''; body.append(panels[k]);
       S.sfx.page();
     }
     root.append(
       h('div', { class: 'hub-head' },
-        h('div', null, h('div', { class: 'eyebrow' }, `${sc.title} — 振り返り`), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, '判断を解剖する')),
+        h('div', null, h('div', { class: 'eyebrow' }, t('rev.eyebrow', { title: sc.title })), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, t('rev.h2'))),
         h('div', { class: 'row' },
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, 'もう一度挑む'),
-          h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); afterMission(goHub); } }, '作戦室へ'))),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, t('end.retry')),
+          h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); afterMission(goHub); } }, t('nav.hub')))),
       tabBar, body);
     body.append(panels.sum);
     bindSfx(root);
@@ -801,17 +810,14 @@
   function scoreTile(label, n, sub) {
     return h('div', { class: 'panel score' }, h('span', { class: 'l' }, label), h('span', { class: 'n' }, String(n)), h('span', { class: 's muted' }, sub));
   }
-  function qbar(q) { return h('span', { class: 'qbar', 'aria-label': `3段階中${q}` }, [1, 2, 3].map(i => h('i', { class: i <= q ? 'on' : '' }))); }
+  function qbar(qv) { return h('span', { class: 'qbar', 'aria-label': t('qbar', { q: qv }) }, [1, 2, 3].map(i => h('i', { class: i <= qv ? 'on' : '' }))); }
   function quadEl(proc, out, qd) {
-    const cell = (k, t, s) => h('div', { class: 'cell' + (qd.k === k ? ' on' : '') }, h('b', null, t), s);
+    const cell = k => h('div', { class: 'cell' + (qd.k === k ? ' on' : '') }, h('b', null, t('q.cell.' + k)), t('q.s.' + k));
     const el = h('div', { class: 'quad' },
-      h('span', { class: 'ax y', style: 'grid-row:1 / 3' }, '結果 →'),
-      cell('bg', '運に救われた', '判断△ 結果◯'),
-      cell('gg', '実力の勝利', '判断◯ 結果◯'),
-      cell('bb', '必然の敗北', '判断△ 結果△'),
-      cell('gb', '良い判断、不運', '判断◯ 結果△'),
+      h('span', { class: 'ax y', style: 'grid-row:1 / 3' }, t('q.ax.y')),
+      cell('bg'), cell('gg'), cell('bb'), cell('gb'),
       h('span', null),
-      h('span', { class: 'ax', style: 'grid-column:2 / 4' }, '判断の質 →'));
+      h('span', { class: 'ax', style: 'grid-column:2 / 4' }, t('q.ax.x')));
     const dot = h('i', { class: 'dot', style: `left:calc(1.6em + (100% - 1.6em) * ${proc / 100}); bottom:calc(1.6em + (100% - 1.6em) * ${out / 100})`, 'aria-hidden': 'true' });
     el.append(dot);
     return el;
@@ -823,47 +829,47 @@
     const root = $('#profile'); root.innerHTML = '';
     const runs = store.runs;
     root.append(h('div', { class: 'hub-head' },
-      h('div', null, h('div', { class: 'eyebrow' }, 'これまでの全作戦から'), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, '判断プロフィール')),
-      h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦室へ')));
+      h('div', null, h('div', { class: 'eyebrow' }, t('prof.eyebrow')), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, t('prof.h2'))),
+      h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub'))));
     if (!runs.length) {
       root.append(h('div', { class: 'panel empty' },
-        h('h3', { style: 'font-family:var(--f-display)' }, 'まだ記録がありません'),
-        h('p', { class: 'muted' }, '作戦を1つ終えると、判断の5つの軸と、あなたの判断の癖がここに積み上がっていきます。'),
-        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦を選ぶ')));
+        h('h3', { style: 'font-family:var(--f-display)' }, t('prof.empty.h')),
+        h('p', { class: 'muted' }, t('prof.empty')),
+        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('prof.choose'))));
       bindSfx(root); show('s-profile'); return;
     }
     const A = Object.fromEntries(['proc', 'out', 'speed', 'info', 'ai', 'calib', 'risk', 'hm'].map(k => [k, Math.round(avg(runs.map(r => r[k])))]));
     const recent = runs.slice(-5);
     const R5 = Object.fromEntries(['proc', 'speed', 'info', 'ai', 'calib'].map(k => [k, Math.round(avg(recent.map(r => r[k])))]));
-    const calibLabel = A.calib >= 75 ? 'ほぼ適切' : '';
+    const calibLabel = A.calib >= 75 ? 'ok' : '';
     root.append(
       h('div', { class: 'scores' },
-        scoreTile('作戦の回数', runs.length, `今日の1判断の連続 ${streakNow()}日`),
-        scoreTile('判断の質(平均)', A.proc, '結果に左右されない筋の良さ'),
-        scoreTile('結果(平均)', A.out, '指標の平均'),
-        scoreTile('確信度の精度', A.calib, '自信と結果の釣り合い')),
+        scoreTile(t('prof.runs'), runs.length, t('prof.runs.s', { n: streakNow() })),
+        scoreTile(t('prof.proc'), A.proc, t('prof.proc.s')),
+        scoreTile(t('prof.out'), A.out, t('prof.out.s')),
+        scoreTile(t('rev.calib'), A.calib, t('prof.calib.s'))),
       h('div', { class: 'review-grid' },
         h('div', { class: 'panel' },
-          h('h3', null, '判断の5つの軸'),
+          h('h3', null, t('rev.radar')),
           h('div', { html: radarSvg([
             { v: A, fill: 'rgba(240,170,50,.18)', stroke: 'var(--amber)' },
             ...(runs.length >= 3 ? [{ v: R5, fill: 'none', stroke: 'var(--cool)', dash: true }] : [])]) }),
-          h('div', { class: 'legend' }, h('span', null, h('i', { style: 'background:var(--amber)' }), '全体の平均'), runs.length >= 3 ? h('span', null, h('i', { style: 'background:var(--cool)' }), '直近5回') : null)),
+          h('div', { class: 'legend' }, h('span', null, h('i', { style: 'background:var(--amber)' }), t('prof.all')), runs.length >= 3 ? h('span', null, h('i', { style: 'background:var(--cool)' }), t('prof.recent')) : null)),
         h('div', { class: 'panel' },
-          h('h3', null, 'あなたの判断の癖'),
-          h('ul', { class: 'tendencies' }, tendencies({ ...A, calibLabel: calibLabel || (A.calib < 60 ? '要注意' : ''), avgConf: 0, sr: 0, timeouts: 0 }).filter(Boolean).map(t => h('li', null, t))),
-          spectrum('リスクの取り方', '慎重', '大胆', A.risk),
-          spectrum('優先したもの', '任務の達成', '人命と長期', A.hm)),
+          h('h3', null, t('rev.tend')),
+          h('ul', { class: 'tendencies' }, tendencies({ ...A, calibLabel, avgConf: 0, sr: 0, timeouts: 0 }).filter(Boolean).map(x => h('li', null, x))),
+          spectrum(t('rev.risk'), t('rev.risk.l'), t('rev.risk.r'), A.risk),
+          spectrum(t('rev.prio'), t('rev.prio.l'), t('rev.prio.r'), A.hm)),
         h('div', { class: 'panel', style: 'grid-column:1 / -1' },
-          h('h3', null, '作戦の記録'),
+          h('h3', null, t('prof.log')),
           h('div', { class: 'table-wrap' }, h('table', { class: 'cmp' },
-            h('thead', null, h('tr', null, ['日時', '作戦', '結末', '判断の質', '結果', '速度', '情報', 'AI', '確信度'].map(x => h('th', null, x)))),
+            h('thead', null, h('tr', null, t('prof.cols').map(x => h('th', null, x)))),
             h('tbody', null, runs.slice().reverse().slice(0, 20).map(r => {
               const s = SC.find(x => x.id === r.sc);
               const d = new Date(r.at);
               return h('tr', null,
                 h('td', { class: 'mono' }, `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`),
-                h('td', null, s ? s.title : r.sc), h('td', null, r.end || ''),
+                h('td', null, s ? s.title : r.sc), h('td', null, s && r.tier != null && s.endings[r.tier] ? s.endings[r.tier].title : (r.end || '')),
                 ...['proc', 'out', 'speed', 'info', 'ai', 'calib'].map(k => h('td', { class: 'mono' }, String(r[k]))));
             })))))));
     bindSfx(root);
@@ -874,17 +880,17 @@
   function goCompare() {
     S.play('title');
     const root = $('#compare'); root.innerHTML = '';
-    const ta = h('textarea', { class: 'codein', id: 'codein', placeholder: 'SRT1. で始まる対戦コードを貼り付け' });
+    const ta = h('textarea', { class: 'codein', id: 'codein', placeholder: t('cmpg.ph') });
     const result = h('div', { id: 'cmp-result', class: 'stack', style: 'margin-top:18px' });
     root.append(
       h('div', { class: 'hub-head' },
-        h('div', null, h('div', { class: 'eyebrow' }, '同じ作戦、別の判断'), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, '友人と比べる')),
-        h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦室へ')),
+        h('div', null, h('div', { class: 'eyebrow' }, t('cmpg.eyebrow')), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, t('cmpg.h2'))),
+        h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub'))),
       h('div', { class: 'panel', style: 'padding:18px;display:grid;gap:12px;max-width:760px' },
-        h('label', { for: 'codein' }, '友人から届いた対戦コード'),
+        h('label', { for: 'codein' }, t('cmpg.label')),
         ta,
-        h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => runCompare(ta.value, result) }, '比べる')),
-        h('p', { class: 'note' }, 'あなたの対戦コードは、作戦の振り返り画面の「比べる」タブにあります。比較には、同じ作戦でのあなたの最新の記録を使います。')),
+        h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => runCompare(ta.value, result) }, t('cmpg.go'))),
+        h('p', { class: 'note' }, t('cmpg.note'))),
       result);
     bindSfx(root);
     show('s-compare');
@@ -892,29 +898,29 @@
   function runCompare(code, out) {
     out.innerHTML = '';
     const f = decodeRun(code);
-    if (!f) { S.sfx.timeout(); out.append(h('div', { class: 'panel', style: 'padding:16px;color:var(--signal)' }, 'コードを読み取れませんでした。「SRT1.」から最後の文字まで、すべて貼り付けてください。')); return; }
+    if (!f) { S.sfx.timeout(); out.append(h('div', { class: 'panel', style: 'padding:16px;color:var(--signal)' }, t('cmpg.bad'))); return; }
     S.sfx.reveal();
     const sc = SC.find(s => s.id === f.s);
     const mine = store.runs.filter(r => r.sc === f.s).slice(-1)[0];
-    const lab = (t, i) => i < 0 ? '時間切れ' : `${LET[i]}: ${t.opt[i].l}`;
+    const lab = (tr, i) => i < 0 ? t('cmpg.timeout') : `${LET[i]}: ${tr.opt[i].l}`;
     out.append(
       h('div', { class: 'scores' },
-        scoreTile(`${f.n} 判断の質`, f.p, `結果 ${f.o} / 「${f.e || ''}」`),
-        mine ? scoreTile('あなた 判断の質', mine.proc, `結果 ${mine.out} / 「${mine.end}」`) : scoreTile('あなた', '—', 'この作戦をまだ遊んでいません'),
-        scoreTile('作戦', sc.title, sc.year),
-        scoreTile('一致した判断', mine ? `${f.c.filter((c, i) => c >= 0 && c === mine.c[i]).length}/${sc.turns.length}` : '—', '同じ選択をした局面')),
+        scoreTile(t('cmpg.fproc', { n: f.n }), f.p, t('cmpg.fs', { o: f.o, e: f.t != null && sc.endings[f.t] ? sc.endings[f.t].title : (f.e || '') })),
+        mine ? scoreTile(t('cmpg.mine'), mine.proc, t('cmpg.fs', { o: mine.out, e: mine.tier != null && sc.endings[mine.tier] ? sc.endings[mine.tier].title : mine.end })) : scoreTile(t('cmpg.you'), '—', t('cmpg.notyet')),
+        scoreTile(t('cmpg.mission'), sc.title, sc.year),
+        scoreTile(t('cmpg.match'), mine ? `${f.c.filter((c, i) => c >= 0 && c === mine.c[i]).length}/${sc.turns.length}` : '—', t('cmpg.match.s'))),
       h('div', { class: 'table-wrap panel' }, h('table', { class: 'cmp' },
-        h('thead', null, h('tr', null, h('th', null, '局面'), h('th', null, f.n), h('th', null, 'あなた'), h('th', null, '史実'))),
-        h('tbody', null, sc.turns.map((t, i) => {
+        h('thead', null, h('tr', null, h('th', null, t('cmpg.col.turn')), h('th', null, f.n), h('th', null, t('cmpg.you')), h('th', null, t('cmpg.col.hist')))),
+        h('tbody', null, sc.turns.map((tr, i) => {
           const fi = f.c[i], mi = mine ? mine.c[i] : null;
-          const hi = t.opt.findIndex(o => o.hist);
+          const hi = tr.opt.findIndex(o => o.hist);
           return h('tr', null,
-            h('td', null, h('b', null, t.title), h('br'), h('span', { class: 'muted mono', style: 'font-size:11px' }, t.clock)),
-            h('td', { class: mine && fi === mi ? 'same' : '' }, lab(t, fi), f.k && f.k[i] ? h('div', { class: 'muted mono', style: 'font-size:11px' }, `確信度 ${Math.round(f.k[i] * 100)}%`) : null),
-            h('td', { class: mine && fi === mi ? 'same' : '' }, mine ? lab(t, mi) : '—', mine && mine.k[i] ? h('div', { class: 'muted mono', style: 'font-size:11px' }, `確信度 ${Math.round(mine.k[i] * 100)}%`) : null),
-            h('td', null, lab(t, hi)));
+            h('td', null, h('b', null, tr.title), h('br'), h('span', { class: 'muted mono', style: 'font-size:11px' }, tr.clock)),
+            h('td', { class: mine && fi === mi ? 'same' : '' }, lab(tr, fi), f.k && f.k[i] ? h('div', { class: 'muted mono', style: 'font-size:11px' }, t('cmpg.conf', { c: Math.round(f.k[i] * 100) })) : null),
+            h('td', { class: mine && fi === mi ? 'same' : '' }, mine ? lab(tr, mi) : '—', mine && mine.k[i] ? h('div', { class: 'muted mono', style: 'font-size:11px' }, t('cmpg.conf', { c: Math.round(mine.k[i] * 100) })) : null),
+            h('td', null, lab(tr, hi)));
         })))),
-      mine ? null : h('button', { class: 'btn', type: 'button', style: 'justify-self:start', onclick: () => { S.sfx.select(); startScenario(sc.id); } }, `「${sc.title}」を遊んで比べる`));
+      mine ? null : h('button', { class: 'btn', type: 'button', style: 'justify-self:start', onclick: () => { S.sfx.select(); startScenario(sc.id); } }, t('cmpg.play', { title: sc.title })));
     bindSfx(out);
   }
 
@@ -922,12 +928,12 @@
   let D = null;
   function goDaily(index, practice) {
     const idx = index != null ? index : dailyIndex();
-    const q = DAILY[idx];
+    const dq = DAILY[idx];
     const key = todayKey();
     const done = store.daily.results[key];
     const root = $('#daily'); root.innerHTML = '';
     if (!practice && done && index == null) { renderDailyResult(DAILY.findIndex(x => x.id === done.id), done, false); return; }
-    D = { idx, q, practice: !!practice, sel: null, decided: false, running: true };
+    D = { idx, q: dq, practice: !!practice, sel: null, decided: false, running: true };
     S.play('tension', 'daily');
     S.setIntensity(0.2);
     S.sfx.radio();
@@ -935,32 +941,32 @@
     const conf = h('input', { type: 'range', id: 'dconf', min: '50', max: '100', step: '5', value: '70' });
     const confVal = h('span', { class: 'conf-val' }, '70%');
     conf.addEventListener('input', () => { confVal.textContent = conf.value + '%'; S.sfx.slide(conf.value - 40); });
-    const go = h('button', { class: 'btn', type: 'button', id: 'dgo', disabled: true, onclick: () => dailyDecide(false) }, '決裁する');
+    const go = h('button', { class: 'btn', type: 'button', id: 'dgo', disabled: true, onclick: () => dailyDecide(false) }, t('turn.go'));
     const sitEl = h('div', { class: 'panel sit', onclick: () => { skipTyping = true; } });
     root.append(h('div', { class: 'daily-wrap' },
       h('div', { class: 'row', style: 'justify-content:space-between;align-items:start' },
         h('div', null,
-          h('div', { class: 'eyebrow' }, practice ? '過去問に挑む' : `今日の1判断 — ${key}`),
-          h('div', { class: 'clock' }, q.year),
-          h('h1', null, q.title),
-          h('p', { class: 'muted' }, `あなた: ${q.role}(${q.roleNote})`)),
+          h('div', { class: 'eyebrow' }, practice ? t('daily.practice') : t('daily.eyebrow', { d: key })),
+          h('div', { class: 'clock' }, dq.year),
+          h('h1', null, dq.title),
+          h('p', { class: 'muted' }, t('daily.you', { role: dq.role, note: dq.roleNote }))),
         ring),
       sitEl,
       h('div', { class: 'panel decide', style: 'margin-top:0' },
-        h('div', { class: 'opts' }, q.opt.map((o, i) =>
+        h('div', { class: 'opts' }, dq.opt.map((o, i) =>
           h('button', { class: 'opt', type: 'button', 'aria-pressed': 'false', 'data-i': String(i), onclick: () => dailyPick(i) },
             h('span', { class: 'letter' }, LET[i]),
             h('span', null, h('div', { class: 'ol' }, o.l), h('div', { class: 'od' }, o.d))))),
         h('div', { class: 'decide-row', style: 'grid-template-columns:minmax(0,1fr) auto' },
-          h('div', { class: 'field' }, h('label', { for: 'dconf' }, '確信度 ', confVal), conf),
+          h('div', { class: 'field' }, h('label', { for: 'dconf' }, t('daily.conf'), confVal), conf),
           go))));
     bindSfx(root);
     show('s-daily');
     ring.update(60, 60);
     skipTyping = false;
     (async () => {
-      await typeInto(sitEl, q.sit, 12);
-      if (!D || D.q !== q || D.decided) return;
+      await typeInto(sitEl, dq.sit, 12);
+      if (!D || D.q !== dq || D.decided) return;
       startTimer(60, tm => { ring.update(tm.left, tm.limit); S.setIntensity(tm.left <= 10 ? 1 : 0.25 + 0.6 * (1 - tm.left / tm.limit)); }, () => dailyDecide(true));
     })();
   }
@@ -992,32 +998,32 @@
     setTimeout(() => renderDailyResult(D.idx, res, D.practice), 600);
   }
   function renderDailyResult(idx, res, practice) {
-    const q = DAILY[idx];
+    const dq = DAILY[idx];
     S.play('review');
     S.sfx.reveal();
-    const hi = q.opt.findIndex(o => o.hist);
-    const best = Math.max(...q.opt.map(o => o.q));
-    const bi = q.opt.findIndex(o => o.q === best);
+    const hi = dq.opt.findIndex(o => o.hist);
+    const best = Math.max(...dq.opt.map(o => o.q));
+    const bi = dq.opt.findIndex(o => o.q === best);
     const root = $('#daily'); root.innerHTML = '';
-    const verdict = res.i < 0 ? '時間切れ' : res.q === 3 ? '筋の良い判断' : res.q >= 1 ? '一理あるが、危うい判断' : '危険な判断';
+    const verdict = res.i < 0 ? t('daily.v.timeout') : res.q === 3 ? t('daily.v.good') : res.q >= 1 ? t('daily.v.mid') : t('daily.v.bad');
     root.append(h('div', { class: 'daily-wrap' },
-      h('div', { class: 'eyebrow' }, practice ? '過去問の結果' : `今日の1判断 — ${todayKey()}`),
-      h('h1', null, q.title),
+      h('div', { class: 'eyebrow' }, practice ? t('daily.res.practice') : t('daily.eyebrow', { d: todayKey() })),
+      h('h1', null, dq.title),
       h('div', { class: 'row' },
         h('span', { class: 'chip ' + (res.q === 3 ? 'ok' : 'ng') }, verdict),
-        practice ? null : h('span', { class: 'chip amber' }, `${streakNow()}日連続`)),
+        practice ? null : h('span', { class: 'chip amber' }, t('daily.streak', { n: streakNow() }))),
       h('div', { class: 'compare2' },
-        h('div', null, h('span', { class: 'who' }, 'あなたの判断'), h('span', { class: 'what' }, res.i < 0 ? '決められなかった' : `${LET[res.i]}: ${q.opt[res.i].l}`), h('span', { class: 'muted', style: 'font-size:13px' }, '判断の質 ', qbar(res.q), res.conf ? `  確信度 ${Math.round(res.conf * 100)}%` : '')),
-        h('div', null, h('span', { class: 'who' }, '史実の判断'), h('span', { class: 'what' }, `${LET[hi]}: ${q.opt[hi].l}`), h('span', { class: 'muted', style: 'font-size:13px' }, '判断の質 ', qbar(q.opt[hi].q)))),
-      hi !== bi ? h('div', { class: 'panel', style: 'padding:14px;border-color:var(--signal)' }, h('b', { style: 'color:var(--signal)' }, '史実の判断が最善だったとは限らない。'), ` この問題で最も筋が良いのは「${LET[bi]}: ${q.opt[bi].l}」だった。`) : null,
+        h('div', null, h('span', { class: 'who' }, t('rev.mine')), h('span', { class: 'what' }, res.i < 0 ? t('daily.none') : `${LET[res.i]}: ${dq.opt[res.i].l}`), h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(res.q), res.conf ? t('rev.conf', { c: Math.round(res.conf * 100) }) : '')),
+        h('div', null, h('span', { class: 'who' }, t('rev.histpick')), h('span', { class: 'what' }, `${LET[hi]}: ${dq.opt[hi].l}`), h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(dq.opt[hi].q)))),
+      hi !== bi ? h('div', { class: 'panel', style: 'padding:14px;border-color:var(--signal)' }, h('b', { style: 'color:var(--signal)' }, t('daily.notbest')), t('daily.best', { x: `${LET[bi]}: ${dq.opt[bi].l}` })) : null,
       h('div', { class: 'panel', style: 'padding:18px;display:grid;gap:10px' },
-        h('div', { class: 'eyebrow' }, '史実では'),
-        h('p', null, q.hist),
-        h('p', { class: 'lesson' }, q.lesson)),
-      shareBar(`司令塔「今日の1判断」${q.title}(${q.year})。私の判断は「${res.i < 0 ? '時間切れ' : q.opt[res.i].l}」で、${verdict}だった。${practice ? '' : `${streakNow()}日連続挑戦中。`}`),
+        h('div', { class: 'eyebrow' }, t('end.history')),
+        h('p', null, dq.hist),
+        h('p', { class: 'lesson' }, dq.lesson)),
+      shareBar(t('share.daily', { title: dq.title, year: dq.year, choice: res.i < 0 ? t('daily.v.timeout') : dq.opt[res.i].l, verdict, streak: practice ? '' : t('share.streak', { n: streakNow() }) })),
       h('div', { class: 'row' },
-        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦室へ')),
-      h('div', { class: 'eyebrow', style: 'margin-top:12px' }, '過去問に挑む(連続記録には数えません)'),
+        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub'))),
+      h('div', { class: 'eyebrow', style: 'margin-top:12px' }, t('daily.archive')),
       h('div', { class: 'archive' }, DAILY.map((d, i) => h('button', { type: 'button', onclick: () => { S.sfx.select(); goDaily(i, true); } }, h('span', { class: 'yr' }, d.year), d.title)))));
     bindSfx(root);
     show('s-daily');
@@ -1027,38 +1033,15 @@
   function goHowto() {
     S.play('title');
     const root = $('#howto'); root.innerHTML = '';
-    const pr = [
-      ['情報は不完全', '入電には誤報や、誤解を招く報告が混じる。「裏を取る」と真偽が分かるが、持ち時間を使う。'],
-      ['時間がない', '1つの判断に制限時間がある。迷っている間も時計は進み、時間切れは「決められなかった」という決断になる。'],
-      ['正解がない', 'どの選択肢も何かを犠牲にする。人命か任務か、今か後か。'],
-      ['結果と判断は別', '運よく成功しても判断の筋が悪ければ評価は低い。筋の良い判断が不運で失敗することもある。'],
-      ['自信を数字にする', '決裁のたびに確信度を入れる。自信過剰か、控えめすぎかが見えてくる。']
-    ];
     root.append(h('div', { class: 'howto' },
-      h('div', null, h('div', { class: 'eyebrow' }, '遊び方'), h('h1', null, '判断を筋トレする')),
-      h('p', null, '司令塔は、歴史上の危機で指揮を執る立場に立ち、限られた時間と不完全な情報の中で決断を下すゲームです。結末だけでなく、判断の筋道そのものを振り返ることで、判断力を鍛えます。'),
-      h('div', { class: 'principles' }, pr.map(([t, d]) => h('div', { class: 'panel' }, h('b', null, t), h('span', { style: 'font-size:14px' }, d)))),
-      h('div', null, h('h2', null, '1つの作戦の流れ'),
-        h('ol', null,
-          h('li', null, 'ブリーフィングで状況と、見守る3つの指標を確かめる。'),
-          h('li', null, '各局面で入電を読み、必要なら裏を取る。'),
-          h('li', null, 'AI参謀3人(慎重派ミネルヴァ、攻撃派アレス、データ至上のラプラス)の進言を聞く。誰かがもっともらしく間違えていることがある。'),
-          h('li', null, '選択肢を選び、確信度と理由を入れて決裁する。結果には運の要素がある。'),
-          h('li', null, '全局面の後、結末と史実が明かされる。振り返りでは、判断と結果のマトリクス、5つの軸、判断の癖、局面ごとの誤報とAIの穴、もしも年表を確かめる。'))),
-      h('div', null, h('h2', null, '5つの軸'),
-        h('ul', null,
-          h('li', null, h('b', null, '判断の質'), ': 結果に関係なく、その時点の情報で筋の良い判断だったか。'),
-          h('li', null, h('b', null, '決断速度'), ': 持ち時間をどれだけ残して決めたか。'),
-          h('li', null, h('b', null, '情報の見極め'), ': 誤報が混じる局面で裏を取ったか、だまされずに判断できたか。'),
-          h('li', null, h('b', null, 'AI参謀の見極め'), ': 推論に穴のある参謀の進言に流されなかったか。'),
-          h('li', null, h('b', null, '確信度の精度'), ': 入れた確信度と、実際に狙いどおりになった割合が釣り合っているか。'))),
-      h('div', null, h('h2', null, '続けるための仕組み'),
-        h('ul', null,
-          h('li', null, h('b', null, '今日の1判断'), ': 日替わりで1問、3分で終わる歴史のジレンマ。連続日数が記録される。'),
-          h('li', null, h('b', null, '判断プロフィール'), ': すべての作戦の記録から、あなたの判断の癖を描く。'),
-          h('li', null, h('b', null, '友人と比べる'), ': 振り返り画面の対戦コードを送り合うと、同じ局面での判断を並べて比べられる。'))),
-      h('p', { class: 'note' }, '記録はこのブラウザの中にだけ保存されます。史実の記述は一般に知られている資料に基づいていますが、ゲームとして状況を単純化しています。史実の判断が常に最善だったわけではありません。'),
-      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, '作戦室へ'))));
+      h('div', null, h('div', { class: 'eyebrow' }, t('how.eyebrow')), h('h1', null, t('how.h1'))),
+      h('p', null, t('how.lede')),
+      h('div', { class: 'principles' }, t('how.p').map(([a, b]) => h('div', { class: 'panel' }, h('b', null, a), h('span', { style: 'font-size:14px' }, b)))),
+      h('div', null, h('h2', null, t('how.flow.h')), h('ol', null, t('how.flow').map(x => h('li', null, x)))),
+      h('div', null, h('h2', null, t('how.axes.h')), h('ul', null, t('how.axes').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
+      h('div', null, h('h2', null, t('how.keep.h')), h('ul', null, t('how.keep').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
+      h('p', { class: 'note' }, t('how.note')),
+      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub')))));
     bindSfx(root);
     show('s-howto');
   }
