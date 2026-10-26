@@ -121,3 +121,5 @@ jobs:
         with:
           name: shireito-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+          # Google Play 用のファイルは公開リポジトリから誰でも取れるので、長く残さない(必要なら再ビルドする)
+          retention-days: 3
