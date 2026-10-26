@@ -263,7 +263,7 @@
             h('div', { class: 'row' },
               h('div', null, h('div', { class: 'streak' }, String(streakNow())), h('div', { class: 'note' }, t('hub.streak'))),
               h('span', { class: 'spacer', style: 'flex:1' }),
-              h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.select(); goDaily(); } }, doneToday ? t('hub.daily.done') : t('hub.daily.go')))),
+              h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.select(); openToday(); } }, doneToday ? t('hub.daily.done') : t('hub.daily.go')))),
           h('div', { class: 'panel' },
             h('h3', null, t('hub.advisors')),
             h('div', { class: 'adv-mini' }, Object.entries(ADV).map(([k, a]) =>
@@ -1019,6 +1019,14 @@
       if (!D || D.q !== dq || D.decided) return;
       startTimer(60, tm => { ring.update(tm.left, tm.limit); S.setIntensity(tm.left <= 10 ? 1 : 0.25 + 0.6 * (1 - tm.left / tm.limit)); }, () => dailyDecide(true));
     })();
+  }
+  // 今日の問題は、その日に初めて開くときだけ全画面広告を出す。2回目以降(結果の振り返りなど)は広告なし
+  function openToday() {
+    const key = todayKey();
+    if (store.daily.adSeen === key || store.daily.results[key]) { goDaily(); return; }
+    store.daily.adSeen = key;
+    save();
+    withAd(goDaily, 5000);
   }
   function dailyPick(i) {
     if (!D || D.decided) return;
