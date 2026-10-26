@@ -113,7 +113,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew bundleRelease --no-daemon
+        run: ./gradlew bundleRelease assembleRelease --no-daemon
 
       - name: Upload release AAB
         if: env.HAS_KEYSTORE == 'true'
@@ -121,3 +121,11 @@ jobs:
         with:
           name: shireito-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+
+      # 署名付きのリリース版 APK(本番広告)。端末に直接入れて最終確認するためのもの。広告はタップしない
+      - name: Upload release APK
+        if: env.HAS_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shireito-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
