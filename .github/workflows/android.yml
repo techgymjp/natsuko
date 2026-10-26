@@ -129,3 +129,26 @@ jobs:
         with:
           name: shireito-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+
+      # スマホから直接入れられるよう、既定ブランチのリリース版 APK を Release(android-release)に載せる。
+      # 動作確認用 APK の「最新」リンクを変えないよう、こちらはプレリリースにする
+      - name: Publish release APK to GitHub Release
+        if: env.HAS_KEYSTORE == 'true' && github.ref_name == github.event.repository.default_branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk shireito-release.apk
+          TITLE="司令塔 Android 版 リリース v${VERSION_NAME} (build ${VERSION_CODE})"
+          cat > notes-release.md <<NOTES
+          Google Play と同じ署名・本番広告のリリース版 APK です。最終確認用。広告はタップしないでください。
+
+          動作確認用 APK(デバッグ署名)とは署名が違うため、上書きできません。先に動作確認用をアンインストールしてから入れてください。
+
+          ビルド: v${VERSION_NAME} (build ${VERSION_CODE}) / コミット ${GITHUB_SHA}
+          NOTES
+          if gh release view android-release > /dev/null 2>&1; then
+            gh release upload android-release shireito-release.apk --clobber
+            gh release edit android-release --title "$TITLE" --notes-file notes-release.md --prerelease
+          else
+            gh release create android-release shireito-release.apk --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes-release.md --prerelease
+          fi
