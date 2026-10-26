@@ -120,9 +120,12 @@ window.Ads = (() => {
     if (banner.want !== banner.visible && banner.created) syncBanner();
   }
 
-  // 全画面広告を表示し、閉じられたら resolve する（読み込めていないときは出さずにすぐ resolve）
-  function showInterstitial() {
-    if (!AdMob || !ids.interstitial || !ready || !slots.inter.loaded || showing) return Promise.resolve();
+  // 全画面広告を表示し、閉じられたら resolve する。
+  // 読み込めていないときは、waitMs を渡せばその時間だけ読み込みを待ち、それでも駄目なら出さずに resolve する
+  async function showInterstitial(waitMs) {
+    if (!AdMob || !ids.interstitial || showing) return;
+    if (waitMs) { await initDone; if (ready) await ensureLoaded('inter', waitMs); }
+    if (!ready || !slots.inter.loaded || showing) return;
     showing = true; slots.inter.loaded = false;
     window.SND.suspend();
     return new Promise(resolve => {

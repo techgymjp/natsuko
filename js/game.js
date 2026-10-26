@@ -555,9 +555,9 @@
   }
 
   /* ── 広告（Android アプリのときだけ。Web 版では何もしない） ── */
-  // トップ(作戦室)に戻るとき、作戦を始めるとき、作戦をやり直すときは毎回、全画面広告を出してから進む
-  async function withAd(next) {
-    if (Ads.interstitialEnabled) await Ads.showInterstitial();
+  // トップ(作戦室)に戻るとき、作戦を始めるとき、作戦をやり直すとき、過去問を開くときは毎回、全画面広告を出してから進む
+  async function withAd(next, waitMs) {
+    if (Ads.interstitialEnabled) await Ads.showInterstitial(waitMs);
     next();
   }
   const toHub = () => withAd(goHub);
@@ -1074,7 +1074,7 @@
       h('div', { class: 'row' },
         h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub'))),
       h('div', { class: 'eyebrow', style: 'margin-top:12px' }, t('daily.archive')),
-      h('div', { class: 'archive' }, DAILY.map((d, i) => h('button', { type: 'button', onclick: () => { S.sfx.select(); goDaily(i, true); } }, h('span', { class: 'yr' }, d.year), d.title)))));
+      h('div', { class: 'archive' }, DAILY.map((d, i) => h('button', { type: 'button', onclick: () => { S.sfx.select(); withAd(() => goDaily(i, true), 5000); } }, h('span', { class: 'yr' }, d.year), d.title)))));
     bindSfx(root);
     show('s-daily');
   }
