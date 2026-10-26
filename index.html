@@ -48,6 +48,7 @@ body {
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
 }
+body { padding-bottom: var(--ad-h, 0px); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--room); }
 button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
@@ -349,7 +350,7 @@ table.cmp td.same { color: var(--go); }
 .principles b { font-family: var(--f-display); font-size: 17px; color: var(--amber); }
 .empty { padding: 28px; text-align: center; display: grid; gap: 12px; justify-items: center; }
 
-.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; background: var(--console-2); border: 1px solid var(--amber); padding: 8px 16px; border-radius: var(--radius); font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px) + var(--ad-h, 0px)); transform: translateX(-50%); z-index: 50; background: var(--console-2); border: 1px solid var(--amber); padding: 8px 16px; border-radius: var(--radius); font-size: 14px; }
 
 @media (max-width: 900px) {
   .hub-grid, .brief-grid, .turn-body, .review-grid { grid-template-columns: minmax(0, 1fr); }

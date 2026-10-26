@@ -45,11 +45,14 @@
 
   /* ── 画面切り替え ── */
   let screen = 's-title';
+  const BANNER_SCREENS = ['s-hub', 's-ending', 's-review', 's-profile', 's-compare', 's-howto', 's-daily'];
   function show(id) {
     $$('.screen').forEach(s => { s.hidden = s.id !== id; });
     $('#topbar').hidden = id === 's-title';
     screen = id;
     window.scrollTo(0, 0);
+    // バナー広告は、判断を下す画面(局面と今日の1判断の出題中)とタイトルでは出さない
+    Ads.setBanner(BANNER_SCREENS.includes(id) && !(id === 's-daily' && D && D.running));
   }
   function toast(msg) {
     const t = h('div', { class: 'toast', role: 'status' }, msg);
@@ -315,7 +318,7 @@
     const reportsEl = h('div', { class: 'reports', 'aria-live': 'polite', onclick: () => { skipTyping = true; } });
     const invBtn = h('button', { class: 'btn ghost small', type: 'button', id: 'inv', disabled: true, onclick: investigate }, t('turn.inv', { s: tr.inv.c }));
     const invNote = h('div', { class: 'inv-note', hidden: true });
-    const adBtn = Ads.available && !G.rewardUsed
+    const adBtn = Ads.rewardedEnabled && !G.rewardUsed
       ? h('button', { class: 'btn ghost small', type: 'button', id: 'adtime', disabled: true, onclick: e => watchAdForTime(e.currentTarget) }, t('turn.ad'))
       : null;
     const advEl = h('div', { class: 'advisors' });
@@ -515,7 +518,7 @@
   let missionsDone = 0;
   async function afterMission(next) {
     if (G && !G.adCounted) { G.adCounted = true; missionsDone++; }
-    if (Ads.available && missionsDone % 2 === 0 && !G.adShown) { G.adShown = true; await Ads.showInterstitial(); }
+    if (Ads.interstitialEnabled && missionsDone % 2 === 0 && !G.adShown) { G.adShown = true; await Ads.showInterstitial(); }
     next();
   }
   // 1作戦に1回、リワード広告を見ると持ち時間が30秒延びる

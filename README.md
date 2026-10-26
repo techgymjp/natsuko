@@ -31,8 +31,8 @@ Capacitor 8 で Android アプリにしている(パッケージ名 `jp.techgym.
 
 - `npm run build` で `www/` に Web ファイルをコピーし、`js/ads-config.js`(テスト広告か本番広告か)と `js/build-info.js`(バージョン)を生成する
 - ビルドは GitHub Actions(`.github/workflows/android.yml`)で行う。既定ブランチのビルドは Release `android-latest` に動作確認用の `shireito.apk` を載せる。署名鍵の Secrets があれば Google Play 用の署名付き AAB も作る
-- 広告(AdMob): 作戦を終えて次へ進むときに2回に1回の全画面広告、局面ごとに1作戦1回まで「広告を見て+30秒」のリワード広告
-- 本番の AdMob のアプリ ID は `android/app/src/main/res/values/strings.xml` の `admob_app_id`、広告ユニット ID は `js/ads.js` の `production` に入れる。入れるまではテスト広告になる
+- 広告(AdMob): 画面下のバナー(作戦室・結末・振り返りなど。判断を下す画面では出さない)、作戦を終えて次へ進むときに2回に1回の全画面広告、1作戦に1回まで「広告を見て+30秒」のリワード広告
+- AdMob のアプリ ID は `android/app/src/main/res/values/strings.xml` の `admob_app_id`、広告ユニット ID は `js/ads.js` の `production`。動作確認用 APK はテスト広告、Google Play 用の AAB だけが本番広告になる
 - アプリでは戻るボタン、Android の共有メニューでのシェア、タイトル画面のビルド番号とプライバシーポリシー、広告の設定(同意が必要な地域のみ)に対応
 
 ## 構成
