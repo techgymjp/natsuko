@@ -31,6 +31,7 @@ window.I18N = (() => {
     'title.lede': ['キューバ危機、アポロ13号、ミッドウェー、南極、地下700m、ハドソン川。歴史に残る危機の中心で、あなたが決める。情報は不完全で、時間はなく、AI参謀は時々もっともらしく間違える。',
       'The Cuban Missile Crisis, Apollo 13, Midway, Antarctica, 700 m underground, the Hudson River. You make the call at the center of history\'s crises. The information is incomplete, time is short, and your AI advisors are sometimes convincingly wrong.'],
     'title.ticker': ['収録された作戦', 'Included missions'],
+    'title.more': ['ほか{n}の作戦', '{n} more missions'],
     'title.callsign': ['あなたのコールサイン(任意)', 'Your call sign (optional)'],
     'title.callsign.ph': ['例: ナツコ', 'e.g. Maverick'],
     'title.enter': ['作戦室に入る', 'Enter the ops room'],
@@ -51,6 +52,14 @@ window.I18N = (() => {
     'hub.time': ['1判断 {s}秒', '{s} s per decision'],
     'hub.turns': ['{n}局面', '{n} decisions'],
     'hub.best': ['最高 判断{p}・結果{o}', 'Best: judgment {p} / outcome {o}'],
+    'hub.mission': ['作戦 {n}', 'Mission {n}'],
+    'lock.label': ['鍵がかかっています', 'Locked'],
+    'lock.need': ['「{prev}」を最後までやり遂げると開きます。', 'Opens when you finish "{prev}".'],
+    'lock.ad': ['広告を見て鍵を開ける', 'Watch an ad to unlock'],
+    'lock.opened': ['「{title}」の鍵が開きました', '"{title}" is now unlocked'],
+    'lock.toast': ['この作戦にはまだ鍵がかかっています', 'This mission is still locked'],
+    'end.unlocked': ['次の作戦「{title}」の鍵が開いた', 'Next mission unlocked: "{title}"'],
+    'end.next': ['次の作戦へ', 'Go to the next mission'],
     'hub.daily': ['今日の1判断', 'Today\'s decision'],
     'hub.streak': ['日連続', 'day streak'],
     'hub.daily.done': ['結果と過去問', 'Result and archive'],
@@ -278,10 +287,12 @@ window.I18N = (() => {
     ]],
     'how.keep.h': ['続けるための仕組み', 'Keep training'],
     'how.keep': [[
+      ['作戦の鍵', '作戦は易しい順に並んでいる。1つを結末まで終えると、次の作戦の鍵が開く。アプリ版では広告を見て鍵を開けることもできる。'],
       ['今日の1判断', '日替わりで1問、3分で終わる歴史のジレンマ。連続日数が記録される。'],
       ['判断プロフィール', 'すべての作戦の記録から、あなたの判断の癖を描く。'],
       ['友人と比べる', '振り返り画面の対戦コードを送り合うと、同じ局面での判断を並べて比べられる。']
     ], [
+      ['Locked missions', 'Missions are ordered from easiest to hardest. Finish one to the outcome and the next one unlocks. In the app, you can also watch an ad to unlock one.'],
       ['Today\'s decision', 'One historical dilemma a day, done in 3 minutes. Your streak is recorded.'],
       ['Judgment profile', 'Draws your decision habits from all your missions.'],
       ['Compare with a friend', 'Swap the codes from the review screen to see your decisions side by side.']

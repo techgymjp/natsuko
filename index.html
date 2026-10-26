@@ -36,6 +36,8 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { min-height: 100%; }
+/* 端末の切り欠きやステータスバーの分だけ、ページ全体を下げる(上部バーが本文に重ならないように) */
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body {
   background: var(--room);
   background-image:
@@ -142,6 +144,18 @@ html[lang="en"] .brand { letter-spacing: .04em; }
 .pips { display: inline-flex; gap: 3px; }
 .pips i { width: 6px; height: 6px; border-radius: 1px; background: var(--rule); display: block; }
 .pips i.on { background: var(--amber); }
+.sc-card.locked { border-style: dashed; background: transparent; }
+.sc-card.locked:hover { transform: none; border-color: var(--rule); }
+.sc-card.locked h3, .sc-card.locked .yr { color: var(--dim); }
+.sc-card.locked .btn { justify-self: start; margin-top: 4px; }
+.lock { display: inline-block; position: relative; width: .62em; height: .5em; margin: 0 .45em 0 .1em; border: 2px solid currentColor; border-radius: 2px; vertical-align: -.02em; }
+.lock::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: .4em; height: .36em; border: 2px solid currentColor; border-bottom: 0; border-radius: .3em .3em 0 0; transform: translateX(-50%); }
+.lock.open::before { transform: translateX(-5%); }
+.unlocked { padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-color: var(--amber); }
+.unlocked .chip { white-space: normal; font-size: 13px; }
+.fs-s { font-size: 13px; }
+.fs-xs { font-size: 11px; }
+.fs-m { font-size: 14px; }
 .side { display: grid; gap: 14px; }
 .side .panel { padding: 16px; display: grid; gap: 10px; }
 .side h3 { font-family: var(--f-display); font-size: 18px; }
@@ -370,6 +384,74 @@ table.cmp td.same { color: var(--go); }
   .tl-head .when, .tl-row .when { grid-column: 1 / -1; }
   .reveal .item { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .brand small { display: none; }
+
+  /* スマホでは文字を一回り大きくする */
+  body { font-size: 17px; line-height: 1.8; }
+  .eyebrow { font-size: 12.5px; letter-spacing: .12em; }
+  .chip { font-size: 12.5px; padding: 3px 10px; }
+  .note, .fs-s { font-size: 15px; }
+  .fs-xs { font-size: 13px; }
+  .fs-m { font-size: 16px; }
+  .btn { font-size: 16px; }
+  .btn.small { font-size: 15px; min-height: 42px; padding: 6px 14px; }
+  .brand { font-size: 21px; }
+  .hero .lede { font-size: 17px; }
+  .ticker div { font-size: 13px; }
+  .ticker b { font-size: 15px; }
+  .hub-head h2 { font-size: 28px; }
+  .sc-card h3 { font-size: 25px; }
+  .sc-card .yr { font-size: 13.5px; }
+  .sc-card .sub, .sc-card .role { font-size: 15.5px; }
+  .adv-mini div, .vol { font-size: 15.5px; }
+  .side h3, .review-grid h3 { font-size: 20px; }
+  .teletype { font-size: 18px; }
+  .kv { font-size: 16px; }
+  .clock { font-size: 15px; }
+  .turn-head h2 { font-size: 26px; }
+  .meter { font-size: 14px; }
+  .sit { font-size: 18px; line-height: 1.85; }
+  .report .from { font-size: 12.5px; }
+  .report .body { font-size: 17px; line-height: 1.8; }
+  .report { background-image: repeating-linear-gradient(transparent 0 30px, rgba(43, 38, 29, .07) 30px 31px); }
+  .inv-note { font-size: 16px; }
+  .adv-name { font-size: 17px; }
+  .adv-name small { font-size: 13px; }
+  .adv-rec { font-size: 13.5px; }
+  .adv p { font-size: 16.5px; }
+  .confbar { font-size: 12.5px; }
+  .opt .ol { font-size: 17.5px; }
+  .opt .od { font-size: 15.5px; }
+  .opt .letter { font-size: 24px; }
+  .field { font-size: 15.5px; }
+  .field input[type=text] { font-size: 16px; }
+  .kbd { display: none; }
+  .verdict h3 { font-size: 24px; }
+  .verdict p { font-size: 17px; }
+  .delta { font-size: 14.5px; }
+  .ending .text { font-size: 19px; }
+  .score .l, .score .s { font-size: 14px; }
+  .tab { font-size: 16px; padding: 12px 14px; }
+  .quad .cell { font-size: 13.5px; }
+  .quad .cell b { font-size: 15px; }
+  .legend, .spectrum { font-size: 14.5px; }
+  .compare2 .who { font-size: 12.5px; }
+  .tcard-head h3 { font-size: 22px; }
+  .reveal { font-size: 16px; }
+  .reveal .item b { font-size: 14px; }
+  .lesson { font-size: 17.5px; }
+  .tl-head { font-size: 12.5px; }
+  .tl-row { font-size: 16px; }
+  .tl-row .when { font-size: 13.5px; }
+  .codebox { font-size: 13.5px; }
+  table.cmp { font-size: 15.5px; }
+  table.cmp th { font-size: 12.5px; }
+  .archive button { font-size: 16px; }
+  .archive .yr { font-size: 13px; }
+  .howto h2 { font-size: 23px; }
+  .principles b { font-size: 19px; }
+  .toast { font-size: 16px; }
+  .unlocked .chip { font-size: 14.5px; }
+  .radar text { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -434,12 +516,40 @@ table.cmp td.same { color: var(--go); }
 <script src="js/ads.js"></script>
 <script src="js/scenarios.js"></script>
 <script src="js/daily.js"></script>
+<script src="js/missions/okehazama.js"></script>
+<script src="js/missions/kurofune.js"></script>
+<script src="js/missions/edo.js"></script>
+<script src="js/missions/armada.js"></script>
+<script src="js/missions/delaware.js"></script>
+<script src="js/missions/london.js"></script>
+<script src="js/missions/britain.js"></script>
+<script src="js/missions/berlin.js"></script>
+<script src="js/missions/gemini8.js"></script>
+<script src="js/missions/tmi.js"></script>
+<script src="js/missions/tylenol.js"></script>
+<script src="js/missions/amundsen.js"></script>
+<script src="js/missions/qf32.js"></script>
+<script src="js/missions/thaicave.js"></script>
 <script src="js/en/cuba.js"></script>
 <script src="js/en/apollo.js"></script>
 <script src="js/en/midway.js"></script>
 <script src="js/en/shackleton.js"></script>
 <script src="js/en/chile.js"></script>
 <script src="js/en/hudson.js"></script>
+<script src="js/en/okehazama.js"></script>
+<script src="js/en/kurofune.js"></script>
+<script src="js/en/edo.js"></script>
+<script src="js/en/armada.js"></script>
+<script src="js/en/delaware.js"></script>
+<script src="js/en/london.js"></script>
+<script src="js/en/britain.js"></script>
+<script src="js/en/berlin.js"></script>
+<script src="js/en/gemini8.js"></script>
+<script src="js/en/tmi.js"></script>
+<script src="js/en/tylenol.js"></script>
+<script src="js/en/amundsen.js"></script>
+<script src="js/en/qf32.js"></script>
+<script src="js/en/thaicave.js"></script>
 <script src="js/en/daily.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/game.js"></script>

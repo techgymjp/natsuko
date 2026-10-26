@@ -24,7 +24,14 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
   const LET = ['A', 'B', 'C'];
-  const SC = window.SCENARIOS, ADV = window.ADVISORS, DAILY = window.DAILY;
+  const ADV = window.ADVISORS, DAILY = window.DAILY;
+  // 作戦は易しい順に並べ、1つずつ鍵を開けていく
+  const ORDER = [
+    'chile', 'tylenol', 'amundsen', 'london',
+    'apollo', 'shackleton', 'okehazama', 'kurofune', 'edo', 'armada', 'delaware', 'berlin', 'qf32', 'thaicave',
+    'cuba', 'midway', 'tmi', 'britain', 'gemini8', 'hudson'
+  ];
+  const SC = ORDER.map(id => window.SCENARIOS.find(s => s.id === id)).filter(Boolean);
   const S = window.SND;
   const Ads = window.Ads;
   const t = window.I18N.t;
@@ -39,7 +46,7 @@
 
   /* ── 保存 ── */
   const KEY = 'shireito.v1';
-  let store = { runs: [], daily: { last: null, streak: 0, results: {} }, name: '', audio: null };
+  let store = { runs: [], daily: { last: null, streak: 0, results: {} }, name: '', audio: null, unlocked: [] };
   try { const v = JSON.parse(localStorage.getItem(KEY)); if (v) store = Object.assign(store, v); } catch (e) { /* 保存なしで続行 */ }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* 保存できない環境 */ } }
 
@@ -125,7 +132,9 @@
   /* ════════════════ タイトル ════════════════ */
   window.I18N.applyStatic();
   syncSoundBtn();
-  $('#s-title .ticker').replaceChildren(...SC.map(sc => h('div', null, (sc.year.match(/\d{4}/) || [''])[0], h('b', null, sc.title))));
+  $('#s-title .ticker').replaceChildren(
+    ...SC.slice(0, 5).map(sc => h('div', null, (sc.year.match(/\d{4}/) || [''])[0], h('b', null, sc.title))),
+    SC.length > 5 ? h('div', null, '+', h('b', null, t('title.more', { n: SC.length - 5 }))) : null);
   $('#lang-title').addEventListener('click', () => window.I18N.setLang(EN ? 'ja' : 'en'));
   $('#callsign').value = store.name || '';
   $('#enter').addEventListener('click', () => {
@@ -137,8 +146,8 @@
     S.sfx.gong();
     goHub();
   });
-  $('#brand').addEventListener('click', () => leaveTo(goHub));
-  $('#nav-hub').addEventListener('click', () => leaveTo(goHub));
+  $('#brand').addEventListener('click', () => leaveTo(toHub));
+  $('#nav-hub').addEventListener('click', () => leaveTo(toHub));
   $('#nav-sound').addEventListener('click', () => {
     S.init();
     S.setMuted(!S.settings.muted);
@@ -187,6 +196,28 @@
     return (dd.last === todayKey() || dd.last === todayKey(y)) ? dd.streak : 0;
   }
 
+  /* ── 作戦の鍵 ── */
+  const cleared = id => store.runs.some(r => r.sc === id);
+  // 最初の作戦、前の作戦を終えた作戦、広告で開けた作戦、すでに遊んだ作戦は開いている
+  function isUnlocked(i) {
+    const sc = SC[i];
+    return i === 0 || cleared(SC[i - 1].id) || store.unlocked.includes(sc.id) || cleared(sc.id);
+  }
+  async function unlockByAd(id, btn) {
+    btn.disabled = true;
+    const r = await Ads.showRewarded();
+    if (r === 'rewarded') {
+      if (!store.unlocked.includes(id)) store.unlocked.push(id);
+      save();
+      S.sfx.success();
+      toast(t('lock.opened', { title: SC.find(s => s.id === id).title }));
+      goHub();
+    } else {
+      btn.disabled = false;
+      if (r === 'unavailable') toast(t('turn.ad.ng'));
+    }
+  }
+
   function goHub() {
     S.play('title');
     const root = $('#hub'); root.innerHTML = '';
@@ -203,10 +234,18 @@
           h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); goCompare(); } }, t('hub.compare')),
           h('button', { class: 'btn ghost small', type: 'button', onclick: () => window.I18N.setLang(EN ? 'ja' : 'en') }, t('lang.switch')))),
       h('div', { class: 'hub-grid' },
-        h('div', { class: 'cards' }, SC.map(sc => {
+        h('div', { class: 'cards' }, SC.map((sc, i) => {
           const b = bestOf(sc.id);
-          return h('button', { class: 'sc-card', type: 'button', onclick: () => { S.sfx.select(); startScenario(sc.id); } },
-            h('span', { class: 'yr' }, sc.year),
+          if (!isUnlocked(i)) {
+            return h('div', { class: 'sc-card locked' },
+              h('span', { class: 'yr' }, t('hub.mission', { n: i + 1 }), ' · ', sc.year),
+              h('h3', null, h('span', { class: 'lock', 'aria-hidden': 'true' }), sc.title),
+              h('span', { class: 'sub' }, t('lock.label')),
+              h('span', { class: 'role' }, t('lock.need', { prev: SC[i - 1].title })),
+              Ads.rewardedEnabled ? h('button', { class: 'btn small', type: 'button', onclick: e => { S.sfx.select(); unlockByAd(sc.id, e.currentTarget); } }, t('lock.ad')) : null);
+          }
+          return h('button', { class: 'sc-card', type: 'button', onclick: () => { S.sfx.select(); withAd(() => startScenario(sc.id)); } },
+            h('span', { class: 'yr' }, t('hub.mission', { n: i + 1 }), ' · ', sc.year),
             h('h3', null, sc.title),
             h('span', { class: 'sub' }, sc.sub),
             h('span', { class: 'role' }, t('hub.you', { role: sc.role }), h('br'), h('span', { class: 'muted' }, sc.roleNote)),
@@ -220,7 +259,7 @@
           h('div', { class: 'panel daily-card' },
             h('div', { class: 'eyebrow' }, t('hub.daily')),
             h('h3', null, today.title),
-            h('p', { class: 'muted', style: 'font-size:13px' }, `${today.year} / ${today.role}`),
+            h('p', { class: 'muted fs-s' }, `${today.year} / ${today.role}`),
             h('div', { class: 'row' },
               h('div', null, h('div', { class: 'streak' }, String(streakNow())), h('div', { class: 'note' }, t('hub.streak'))),
               h('span', { class: 'spacer', style: 'flex:1' }),
@@ -251,7 +290,9 @@
   /* ════════════════ 作戦: ブリーフィング ════════════════ */
   let G = null;
   function startScenario(id) {
-    const sc = SC.find(s => s.id === id);
+    const idx = SC.findIndex(s => s.id === id);
+    if (idx < 0 || !isUnlocked(idx)) { toast(t('lock.toast')); goHub(); return; }
+    const sc = SC[idx];
     G = { sc, ti: 0, m: Object.fromEntries(sc.meters.map(x => [x.k, x.v])), log: [], done: false };
     renderBrief();
   }
@@ -514,13 +555,12 @@
   }
 
   /* ── 広告（Android アプリのときだけ。Web 版では何もしない） ── */
-  // 作戦を終えて次へ進むとき、2回に1回だけ全画面広告を出す
-  let missionsDone = 0;
-  async function afterMission(next) {
-    if (G && !G.adCounted) { G.adCounted = true; missionsDone++; }
-    if (Ads.interstitialEnabled && missionsDone % 2 === 0 && !G.adShown) { G.adShown = true; await Ads.showInterstitial(); }
+  // トップ(作戦室)に戻るとき、作戦を始めるとき、作戦をやり直すときは毎回、全画面広告を出してから進む
+  async function withAd(next) {
+    if (Ads.interstitialEnabled) await Ads.showInterstitial();
     next();
   }
+  const toHub = () => withAd(goHub);
   // 1作戦に1回、リワード広告を見ると持ち時間が30秒延びる
   async function watchAdForTime(btn) {
     if (!T || T.decided || G.rewardUsed || !timer) return;
@@ -572,23 +612,30 @@
       sc: sc.id, at: Date.now(), proc: R.proc, out: R.out, speed: R.speed, info: R.info, ai: R.ai, calib: R.calib,
       risk: R.risk, hm: R.hm, c: G.log.map(l => l.timeout ? -1 : l.i), k: G.log.map(l => l.conf), end: end.title, tier: tierIdx
     };
+    const ni = SC.indexOf(sc) + 1;
+    const nextWasLocked = ni < SC.length && !isUnlocked(ni);
     store.runs.push(G.run);
+    const opened = nextWasLocked && isUnlocked(ni) ? SC[ni] : null;
     if (store.runs.length > 60) store.runs = store.runs.slice(-60);
     save();
     S.stopBgm(1.2);
     setTimeout(() => { if (tierIdx === 0) S.sfx.stingGood(); else if (tierIdx === 1) S.sfx.stingMid(); else S.sfx.stingBad(); }, 400);
     setTimeout(() => { if (screen === 's-ending') S.play('review'); }, 4200);
+    if (opened) setTimeout(() => S.sfx.reveal(), 2600);
     const root = $('#ending'); root.innerHTML = '';
     root.append(h('div', { class: 'ending' },
       h('div', { class: 'eyebrow' }, t('end.eyebrow', { title: sc.title })),
       h('h1', null, end.title),
       h('p', { class: 'text' }, end.text),
+      opened ? h('div', { class: 'panel unlocked' },
+        h('span', { class: 'chip amber' }, h('span', { class: 'lock open', 'aria-hidden': 'true' }), t('end.unlocked', { title: opened.title })),
+        h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.select(); withAd(() => startScenario(opened.id)); } }, t('end.next'))) : null,
       h('div', { class: 'panel', style: 'padding:16px' }, h('div', { class: 'meters' }, sc.meters.map(m => meterRow(m.n, G.m[m.k], m.k)))),
       h('div', { class: 'panel epilogue' }, h('div', { class: 'eyebrow', style: 'margin-bottom:6px' }, t('end.history')), h('p', null, sc.epilogue)),
       shareBar(t('share.end', { title: sc.title, role: sc.role, end: end.title, p: R.proc, o: R.out })),
       h('div', { class: 'row' },
         h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.reveal(); renderReview(); } }, t('end.review')),
-        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, t('end.retry')))));
+        h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.sfx.click(); withAd(() => startScenario(sc.id)); } }, t('end.retry')))));
     bindSfx(root);
     show('s-ending');
   }
@@ -744,12 +791,12 @@
           h('div', null,
             h('span', { class: 'who' }, t('rev.mine')),
             h('span', { class: 'what' }, l.timeout ? t('rev.mine.timeout', { x: `${LET[l.i]}: ${o.l}` }) : `${LET[l.i]}: ${o.l}`),
-            h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(l.q), l.timeout ? '' : t('rev.conf', { c: Math.round(l.conf * 100) })),
-            l.reason ? h('span', { style: 'font-size:13px' }, t('rev.reason', { r: l.reason })) : null),
+            h('span', { class: 'muted fs-s' }, t('rev.quality'), qbar(l.q), l.timeout ? '' : t('rev.conf', { c: Math.round(l.conf * 100) })),
+            l.reason ? h('span', { class: 'fs-s' }, t('rev.reason', { r: l.reason })) : null),
           h('div', null,
             h('span', { class: 'who' }, t('rev.histpick')),
             h('span', { class: 'what' }, `${LET[hi]}: ${tr.opt[hi].l}`),
-            h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(tr.opt[hi].q)))),
+            h('span', { class: 'muted fs-s' }, t('rev.quality'), qbar(tr.opt[hi].q)))),
         h('p', null, tr.hist),
         h('div', { class: 'reveal' },
           bad ? h('div', { class: 'item' }, h('b', null, t('rev.bad')), h('span', null, t('rev.bad.t', { f: bad.f, why: bad.why }))) : null,
@@ -803,8 +850,8 @@
       h('div', { class: 'hub-head' },
         h('div', null, h('div', { class: 'eyebrow' }, t('rev.eyebrow', { title: sc.title })), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, t('rev.h2'))),
         h('div', { class: 'row' },
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); afterMission(() => startScenario(sc.id)); } }, t('end.retry')),
-          h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); afterMission(goHub); } }, t('nav.hub')))),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => { S.sfx.click(); withAd(() => startScenario(sc.id)); } }, t('end.retry')),
+          h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub')))),
       tabBar, body);
     body.append(panels.sum);
     bindSfx(root);
@@ -833,12 +880,12 @@
     const runs = store.runs;
     root.append(h('div', { class: 'hub-head' },
       h('div', null, h('div', { class: 'eyebrow' }, t('prof.eyebrow')), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, t('prof.h2'))),
-      h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub'))));
+      h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub'))));
     if (!runs.length) {
       root.append(h('div', { class: 'panel empty' },
         h('h3', { style: 'font-family:var(--f-display)' }, t('prof.empty.h')),
         h('p', { class: 'muted' }, t('prof.empty')),
-        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('prof.choose'))));
+        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('prof.choose'))));
       bindSfx(root); show('s-profile'); return;
     }
     const A = Object.fromEntries(['proc', 'out', 'speed', 'info', 'ai', 'calib', 'risk', 'hm'].map(k => [k, Math.round(avg(runs.map(r => r[k])))]));
@@ -888,7 +935,7 @@
     root.append(
       h('div', { class: 'hub-head' },
         h('div', null, h('div', { class: 'eyebrow' }, t('cmpg.eyebrow')), h('h2', { style: 'font-family:var(--f-display);font-size:clamp(26px,4vw,36px)' }, t('cmpg.h2'))),
-        h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub'))),
+        h('button', { class: 'btn small', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub'))),
       h('div', { class: 'panel', style: 'padding:18px;display:grid;gap:12px;max-width:760px' },
         h('label', { for: 'codein' }, t('cmpg.label')),
         ta,
@@ -918,12 +965,12 @@
           const fi = f.c[i], mi = mine ? mine.c[i] : null;
           const hi = tr.opt.findIndex(o => o.hist);
           return h('tr', null,
-            h('td', null, h('b', null, tr.title), h('br'), h('span', { class: 'muted mono', style: 'font-size:11px' }, tr.clock)),
-            h('td', { class: mine && fi === mi ? 'same' : '' }, lab(tr, fi), f.k && f.k[i] ? h('div', { class: 'muted mono', style: 'font-size:11px' }, t('cmpg.conf', { c: Math.round(f.k[i] * 100) })) : null),
-            h('td', { class: mine && fi === mi ? 'same' : '' }, mine ? lab(tr, mi) : '—', mine && mine.k[i] ? h('div', { class: 'muted mono', style: 'font-size:11px' }, t('cmpg.conf', { c: Math.round(mine.k[i] * 100) })) : null),
+            h('td', null, h('b', null, tr.title), h('br'), h('span', { class: 'muted mono fs-xs' }, tr.clock)),
+            h('td', { class: mine && fi === mi ? 'same' : '' }, lab(tr, fi), f.k && f.k[i] ? h('div', { class: 'muted mono fs-xs' }, t('cmpg.conf', { c: Math.round(f.k[i] * 100) })) : null),
+            h('td', { class: mine && fi === mi ? 'same' : '' }, mine ? lab(tr, mi) : '—', mine && mine.k[i] ? h('div', { class: 'muted mono fs-xs' }, t('cmpg.conf', { c: Math.round(mine.k[i] * 100) })) : null),
             h('td', null, lab(tr, hi)));
         })))),
-      mine ? null : h('button', { class: 'btn', type: 'button', style: 'justify-self:start', onclick: () => { S.sfx.select(); startScenario(sc.id); } }, t('cmpg.play', { title: sc.title })));
+      mine ? null : h('button', { class: 'btn', type: 'button', style: 'justify-self:start', onclick: () => { S.sfx.select(); withAd(() => startScenario(sc.id)); } }, t('cmpg.play', { title: sc.title })));
     bindSfx(out);
   }
 
@@ -1016,8 +1063,8 @@
         h('span', { class: 'chip ' + (res.q === 3 ? 'ok' : 'ng') }, verdict),
         practice ? null : h('span', { class: 'chip amber' }, t('daily.streak', { n: streakNow() }))),
       h('div', { class: 'compare2' },
-        h('div', null, h('span', { class: 'who' }, t('rev.mine')), h('span', { class: 'what' }, res.i < 0 ? t('daily.none') : `${LET[res.i]}: ${dq.opt[res.i].l}`), h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(res.q), res.conf ? t('rev.conf', { c: Math.round(res.conf * 100) }) : '')),
-        h('div', null, h('span', { class: 'who' }, t('rev.histpick')), h('span', { class: 'what' }, `${LET[hi]}: ${dq.opt[hi].l}`), h('span', { class: 'muted', style: 'font-size:13px' }, t('rev.quality'), qbar(dq.opt[hi].q)))),
+        h('div', null, h('span', { class: 'who' }, t('rev.mine')), h('span', { class: 'what' }, res.i < 0 ? t('daily.none') : `${LET[res.i]}: ${dq.opt[res.i].l}`), h('span', { class: 'muted fs-s' }, t('rev.quality'), qbar(res.q), res.conf ? t('rev.conf', { c: Math.round(res.conf * 100) }) : '')),
+        h('div', null, h('span', { class: 'who' }, t('rev.histpick')), h('span', { class: 'what' }, `${LET[hi]}: ${dq.opt[hi].l}`), h('span', { class: 'muted fs-s' }, t('rev.quality'), qbar(dq.opt[hi].q)))),
       hi !== bi ? h('div', { class: 'panel', style: 'padding:14px;border-color:var(--signal)' }, h('b', { style: 'color:var(--signal)' }, t('daily.notbest')), t('daily.best', { x: `${LET[bi]}: ${dq.opt[bi].l}` })) : null,
       h('div', { class: 'panel', style: 'padding:18px;display:grid;gap:10px' },
         h('div', { class: 'eyebrow' }, t('end.history')),
@@ -1025,7 +1072,7 @@
         h('p', { class: 'lesson' }, dq.lesson)),
       shareBar(t('share.daily', { title: dq.title, year: dq.year, choice: res.i < 0 ? t('daily.v.timeout') : dq.opt[res.i].l, verdict, streak: practice ? '' : t('share.streak', { n: streakNow() }) })),
       h('div', { class: 'row' },
-        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub'))),
+        h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub'))),
       h('div', { class: 'eyebrow', style: 'margin-top:12px' }, t('daily.archive')),
       h('div', { class: 'archive' }, DAILY.map((d, i) => h('button', { type: 'button', onclick: () => { S.sfx.select(); goDaily(i, true); } }, h('span', { class: 'yr' }, d.year), d.title)))));
     bindSfx(root);
@@ -1039,12 +1086,12 @@
     root.append(h('div', { class: 'howto' },
       h('div', null, h('div', { class: 'eyebrow' }, t('how.eyebrow')), h('h1', null, t('how.h1'))),
       h('p', null, t('how.lede')),
-      h('div', { class: 'principles' }, t('how.p').map(([a, b]) => h('div', { class: 'panel' }, h('b', null, a), h('span', { style: 'font-size:14px' }, b)))),
+      h('div', { class: 'principles' }, t('how.p').map(([a, b]) => h('div', { class: 'panel' }, h('b', null, a), h('span', { class: 'fs-m' }, b)))),
       h('div', null, h('h2', null, t('how.flow.h')), h('ol', null, t('how.flow').map(x => h('li', null, x)))),
       h('div', null, h('h2', null, t('how.axes.h')), h('ul', null, t('how.axes').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
       h('div', null, h('h2', null, t('how.keep.h')), h('ul', null, t('how.keep').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
       h('p', { class: 'note' }, t('how.note')),
-      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); goHub(); } }, t('nav.hub')))));
+      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub')))));
     bindSfx(root);
     show('s-howto');
   }
@@ -1059,7 +1106,7 @@
       if (Ads.showing) return;
       if (screen === 's-title' || screen === 's-hub') { plugin('App').exitApp(); return; }
       if (document.querySelector('.overlay')) return;
-      leaveTo(goHub);
+      leaveTo(toHub);
     });
   }
 
