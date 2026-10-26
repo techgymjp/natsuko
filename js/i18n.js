@@ -15,8 +15,8 @@ window.I18N = (() => {
     // 共通
     'brand.sub': ['COMMAND SEAT', '司令塔'],
     'nav.hub': ['作戦室', 'Ops room'],
-    'nav.sound.on': ['音 ON', 'Sound on'],
-    'nav.sound.off': ['音 OFF', 'Sound off'],
+    'nav.sound.on': ['音 ON', 'Sound'],
+    'nav.sound.off': ['音 OFF', 'Muted'],
     'nav.confirm': ['本当に中断する?', 'Really quit?'],
     'lang.switch': ['English', '日本語'],
     'timer.left': ['残り', 'LEFT'],
