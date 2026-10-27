@@ -187,7 +187,7 @@ JET STRIKE(techgymjp/jet-fighter)の `docs/IOS_BUILD.md` の 7 章と同じで�
 | `ASC_ISSUER_ID` | Issuer ID |
 | `ASC_KEY_P8_BASE64` | API キー(.p8)を変換した文字列 |
 
-登録が終わったら、Claude Code に「iOS の自動アップロードのワークフローを作って」と頼みます。
+登録が済んでいれば、既定ブランチに push するたびに GitHub Actions(`.github/workflows/ios-release.yml`)が本番広告の設定でビルドし、署名して TestFlight にアップロードします。ビルド番号は「実行回数 + 100」です(手元の Mac から 3 章の手順でアップロードするときは、1〜99 の番号を使えばぶつかりません)。Actions のページの「iOS release (TestFlight)」から手動で実行することもできます。アップロードから 10〜30 分ほどで TestFlight に表示されます。審査への提出は、これまでどおり App Store Connect で行います。
 
 **注意**:証明書(.p12)、そのパスワード、API キー(.p8)は、チャット・AI へのアップロード・リポジトリへのコミットで**絶対に共有しない**でください。
 
