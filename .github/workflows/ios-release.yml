@@ -110,18 +110,33 @@ jobs:
           echo "BUNDLE_ID=$BUNDLE_ID" >> "$GITHUB_ENV"
           "$RUNNER_TEMP/venv/bin/python" scripts/ios-profile.py "$BUNDLE_ID" "$CERT_SERIAL"
 
-      # 配布用証明書とプロファイルを指定して署名する(手動署名)
+      # 配布用証明書とプロファイルを指定して署名する(手動署名)。
+      # コマンドラインで指定するとライブラリ(Swift Package)にも効いて失敗するので、アプリのターゲットの設定だけを書き換える
       - name: Archive
         if: env.HAS_SECRETS == 'true'
         working-directory: ios/App
         run: |
           set -o pipefail
+          python3 - <<'PY'
+          import os, re
+          p = 'App.xcodeproj/project.pbxproj'
+          s = open(p).read()
+          bid = os.environ['BUNDLE_ID']
+          def fix(m):
+              block = m.group(0)
+              if f'PRODUCT_BUNDLE_IDENTIFIER = {bid};' not in block:
+                  return block
+              block = block.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+              add = (f'\t\t\t\tCODE_SIGN_IDENTITY = "Apple Distribution";\n'
+                     f'\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{os.environ["PROFILE_NAME"]}";\n')
+              return block.replace('buildSettings = {\n', 'buildSettings = {\n' + add, 1)
+          s2 = re.sub(r'buildSettings = \{\n.*?\n\t\t\t\};', fix, s, flags=re.S)
+          assert s2 != s, 'app target build settings not found'
+          open(p, 'w').write(s2)
+          PY
           xcodebuild -project App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" MARKETING_VERSION="$VERSION_NAME" \
             archive | tail -60
           test -d "$RUNNER_TEMP/App.xcarchive"
