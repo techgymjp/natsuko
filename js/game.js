@@ -666,7 +666,7 @@
   function radarSvg(series) {
     const keys = ['proc', 'speed', 'info', 'ai', 'calib'];
     const axes = keys.map(k => t('axis.' + k));
-    const W = 440, Hh = 300, cx = 220, cy = 155, R = 100;
+    const W = 540, Hh = 300, cx = 270, cy = 155, R = 100;
     const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; return [cx + Math.cos(a) * R * v / 100, cy + Math.sin(a) * R * v / 100]; };
     let s = `<svg class="radar" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${t('axis.aria')}">`;
     [25, 50, 75, 100].forEach(v => { s += `<polygon points="${keys.map((_, i) => pt(i, v).join(',')).join(' ')}" fill="none" stroke="var(--rule)" stroke-width="1"/>`; });

@@ -20,6 +20,14 @@
 - 今日の1判断(日替わり30問・連続記録)、判断プロフィール、対戦コードで友人と比較
 - BGMと効果音はすべて Web Audio API でその場で合成(音声ファイルなし)
 
+## iOS 版
+Android と同じ Capacitor のプロジェクトに `ios/` を足している(Bundle ID `jp.techgym.natsuko`、iPhone 専用・縦画面)。Mac での作業手順は `docs/IOS_BUILD.md`。
+
+- `npm run ios:sync`(テスト広告)/ `npm run ios:release`(本番広告。App Store 用)/ `npm run ios:open`
+- 広告ユニットは `js/ads.js` の `UNITS.android` と `UNITS.ios` に分かれている。iOS では同意確認のあとに App Tracking Transparency の確認を出す
+- push のたびに GitHub Actions(`.github/workflows/ios.yml`)が、署名なしでシミュレーター向けにビルドできるかを確かめる
+- App Store 用の画像は `docs/store/ios/`
+
 ## 言語
 日本語と英語に対応。端末の言語が日本語なら日本語、それ以外は英語で始まり、タイトル画面と作戦室のボタンで切り替えられる(選択はブラウザに保存)。英語の文章は `js/en/` にあり、数値や判定は日本語版のデータ(`js/scenarios.js`、`js/daily.js`)を共通で使う。画面の文言は `js/i18n.js` にまとめている。
 

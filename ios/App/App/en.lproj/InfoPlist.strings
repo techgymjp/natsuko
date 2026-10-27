@@ -1,0 +1,4 @@
+/* App name on the Home Screen */
+"CFBundleDisplayName" = "Command Seat";
+/* App Tracking Transparency prompt */
+"NSUserTrackingUsageDescription" = "This identifier is used to show you more relevant ads. The game is free thanks to ads.";
