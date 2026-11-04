@@ -269,11 +269,21 @@
             h('div', { class: 'adv-mini' }, Object.entries(ADV).map(([k, a]) =>
               h('div', null, h('span', { class: `glyph g-${k}` }, a.glyph), h('span', null, h('b', null, a.name), EN ? ` ${a.stance}. ${a.desc}.` : ` ${a.stance}。${a.desc}。`)))),
             h('p', { class: 'note' }, t('hub.advisors.note'))),
+          NATIVE ? null : h('div', { class: 'panel' },
+            h('h3', null, t('store.hub')),
+            playLink(),
+            h('p', { class: 'note' }, t('store.hub.note'))),
           h('div', { class: 'panel' },
             h('h3', null, t('hub.volume')),
             volControls()))));
     bindSfx(root);
     show('s-hub');
+  }
+  // Google Play へのリンク(アプリの中では出さない)
+  function playLink() {
+    return h('a', { class: 'store-link', href: t('store.url'), target: '_blank', rel: 'noopener', onclick: () => S.sfx.select() },
+      h('span', { class: 'play-mark', 'aria-hidden': 'true' }),
+      h('span', null, h('small', null, t('store.eyebrow')), h('b', null, t('store.play'))));
   }
   function volControls() {
     const s = S.settings;
@@ -1103,6 +1113,9 @@
     bindSfx(root);
     show('s-howto');
   }
+
+  // Web 版のタイトル画面に、Google Play へのリンクを出す
+  if (!NATIVE) { const pl = $('#play-link'); pl.href = t('store.url'); pl.hidden = false; }
 
   /* ── Android アプリ ── */
   if (window.APP_VERSION && window.APP_VERSION !== 'dev') $('#build-info').textContent = window.APP_VERSION;
