@@ -1108,6 +1108,7 @@
       h('div', null, h('h2', null, t('how.flow.h')), h('ol', null, t('how.flow').map(x => h('li', null, x)))),
       h('div', null, h('h2', null, t('how.axes.h')), h('ul', null, t('how.axes').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
       h('div', null, h('h2', null, t('how.keep.h')), h('ul', null, t('how.keep').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
+      NATIVE ? null : h('div', { class: 'stack' }, h('h2', null, t('store.hub')), playLink(), h('p', { class: 'note' }, t('store.tm'))),
       h('p', { class: 'note' }, t('how.note')),
       h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub')))));
     bindSfx(root);

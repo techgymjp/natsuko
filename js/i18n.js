@@ -34,6 +34,7 @@ window.I18N = (() => {
     'store.eyebrow': ['Android アプリ', 'Android app'],
     'store.play': ['Google Play で入手', 'Get it on Google Play'],
     'store.url': ['https://play.google.com/store/apps/details?id=jp.techgym.natsuko&hl=ja', 'https://play.google.com/store/apps/details?id=jp.techgym.natsuko&hl=en'],
+    'store.tm': ['Google Play および Google Play ロゴは Google LLC の商標です。', 'Google Play and the Google Play logo are trademarks of Google LLC.'],
     'store.hub': ['アプリ版', 'Get the app'],
     'store.hub.note': ['スマートフォンでも遊べます。記録はアプリとブラウザで別々に保存されます。', 'Play on your phone too. Records are saved separately in the app and the browser.'],
     'title.more': ['ほか{n}の作戦', '{n} more missions'],
