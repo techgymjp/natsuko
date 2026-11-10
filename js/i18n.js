@@ -31,12 +31,14 @@ window.I18N = (() => {
     'title.lede': ['キューバ危機、アポロ13号、ミッドウェー、南極、地下700m、ハドソン川。歴史に残る危機の中心で、あなたが決める。情報は不完全で、時間はなく、AI参謀は時々もっともらしく間違える。',
       'The Cuban Missile Crisis, Apollo 13, Midway, Antarctica, 700 m underground, the Hudson River. You make the call at the center of history\'s crises. The information is incomplete, time is short, and your AI advisors are sometimes convincingly wrong.'],
     'title.ticker': ['収録された作戦', 'Included missions'],
+    // web-only:start Google Play へのリンクの文言(アプリのビルドでは取り除く)
     'store.eyebrow': ['Android アプリ', 'Android app'],
     'store.play': ['Google Play で入手', 'Get it on Google Play'],
     'store.url': ['https://play.google.com/store/apps/details?id=jp.techgym.natsuko&hl=ja', 'https://play.google.com/store/apps/details?id=jp.techgym.natsuko&hl=en'],
     'store.tm': ['Google Play および Google Play ロゴは Google LLC の商標です。', 'Google Play and the Google Play logo are trademarks of Google LLC.'],
     'store.hub': ['アプリ版', 'Get the app'],
     'store.hub.note': ['スマートフォンでも遊べます。記録はアプリとブラウザで別々に保存されます。', 'Play on your phone too. Records are saved separately in the app and the browser.'],
+    // web-only:end
     'title.more': ['ほか{n}の作戦', '{n} more missions'],
     'title.callsign': ['あなたのコールサイン(任意)', 'Your call sign (optional)'],
     'title.callsign.ph': ['例: ナツコ', 'e.g. Maverick'],

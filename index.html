@@ -500,10 +500,12 @@ table.cmp td.same { color: var(--go); }
           <button class="btn" id="enter" type="button" data-i18n="title.enter">作戦室に入る</button>
           <span class="note" data-i18n="title.note">音が鳴ります。BGMと効果音はすべてその場で合成しています。</span>
         </div>
+        <!-- web-only: Google Play へのリンク(アプリのビルドでは取り除く) -->
         <a class="store-link" id="play-link" href="https://play.google.com/store/apps/details?id=jp.techgym.natsuko&amp;hl=ja" target="_blank" rel="noopener" hidden>
           <span class="play-mark" aria-hidden="true"></span>
           <span><small data-i18n="store.eyebrow">Android アプリ</small><b data-i18n="store.play">Google Play で入手</b></span>
         </a>
+        <!-- /web-only -->
         <p class="note legal">
           <span id="build-info"></span>
           <a href="https://techgym.jp/privacy-policy/" target="_blank" rel="noopener" data-i18n="title.privacy" data-i18n-href="title.privacy.url">プライバシーポリシー</a>

@@ -64,7 +64,7 @@ jobs:
         env:
           ADMOB_MODE: production
         run: |
-          VERSION_CODE="$BUILD_NUMBER" npm run build
+          VERSION_CODE="$BUILD_NUMBER" npm run build:app
           npx cap sync ios
 
       - name: Install the distribution certificate

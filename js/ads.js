@@ -34,7 +34,7 @@ window.Ads = (() => {
   const cap = window.Capacitor;
   const native = !!(cap && cap.isNativePlatform && cap.isNativePlatform());
   const AdMob = native && cap.Plugins ? cap.Plugins.AdMob : null;
-  const platform = native && cap.getPlatform() === 'ios' ? 'ios' : 'android';
+  const platform = native && cap.getPlatform && cap.getPlatform() === 'ios' ? 'ios' : 'android';
   const testing = window.AD_MODE !== 'production';
   const ids = UNITS[platform][testing ? 'test' : 'production'];
 

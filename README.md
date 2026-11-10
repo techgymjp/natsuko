@@ -24,6 +24,7 @@
 Android と同じ Capacitor のプロジェクトに `ios/` を足している(Bundle ID `jp.techgym.natsuko`、iPhone 専用・縦画面)。Mac での作業手順は `docs/IOS_BUILD.md`。
 
 - `npm run ios:sync`(テスト広告)/ `npm run ios:release`(本番広告。App Store 用)/ `npm run ios:open`
+- アプリ用のビルドは `npm run build:app`。Web 版だけの部分(`<!-- web-only -->` / `// web-only:start` で囲んだ Google Play へのリンクなど)を取り除く。Web 版の公開は `npm run build`
 - 広告ユニットは `js/ads.js` の `UNITS.android` と `UNITS.ios` に分かれている。iOS では同意確認のあとに App Tracking Transparency の確認を出す
 - push のたびに GitHub Actions(`.github/workflows/ios.yml`)が、署名なしでシミュレーター向けにビルドできるかを確かめる
 - App Store 用の画像は `docs/store/ios/`

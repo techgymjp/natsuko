@@ -269,22 +269,26 @@
             h('div', { class: 'adv-mini' }, Object.entries(ADV).map(([k, a]) =>
               h('div', null, h('span', { class: `glyph g-${k}` }, a.glyph), h('span', null, h('b', null, a.name), EN ? ` ${a.stance}. ${a.desc}.` : ` ${a.stance}。${a.desc}。`)))),
             h('p', { class: 'note' }, t('hub.advisors.note'))),
+          // web-only:start
           NATIVE ? null : h('div', { class: 'panel' },
             h('h3', null, t('store.hub')),
             playLink(),
             h('p', { class: 'note' }, t('store.hub.note'))),
+          // web-only:end
           h('div', { class: 'panel' },
             h('h3', null, t('hub.volume')),
             volControls()))));
     bindSfx(root);
     show('s-hub');
   }
+  // web-only:start
   // Google Play へのリンク(アプリの中では出さない)
   function playLink() {
     return h('a', { class: 'store-link', href: t('store.url'), target: '_blank', rel: 'noopener', onclick: () => S.sfx.select() },
       h('span', { class: 'play-mark', 'aria-hidden': 'true' }),
       h('span', null, h('small', null, t('store.eyebrow')), h('b', null, t('store.play'))));
   }
+  // web-only:end
   function volControls() {
     const s = S.settings;
     const row = (k, label) => {
@@ -724,31 +728,33 @@
   const SHARE_URL = 'https://techgym.jp/column/claude-code-game-shireito/';
   function shareBar(text) {
     const full = `${text}\n${t('share.tags')}`;
-    const enc = encodeURIComponent;
     const textEl = h('div', { class: 'codebox share-text' }, `${full}\n${SHARE_URL}`);
-    const link = (label, href) => h('a', { class: 'btn ghost small', href, target: '_blank', rel: 'noopener', onclick: () => S.sfx.select() }, label);
     const nativeShare = plugin('Share');
+    const buttons = [];
     if (nativeShare) {
-      // アプリでは Android の共有メニューを出す
-      return h('div', { class: 'panel share' },
-        h('div', { class: 'eyebrow' }, t('share.h')),
-        textEl,
-        h('div', { class: 'row' },
-          h('button', { class: 'btn small', type: 'button', onclick: async () => {
-            S.sfx.select();
-            try { await nativeShare.share({ title: t('share.app'), text: full, url: SHARE_URL, dialogTitle: t('share.dialog') }); } catch (e) { /* キャンセル */ }
-          } }, t('share.native')),
-          h('button', { class: 'btn ghost small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, t('share.copy'))));
+      // アプリでは Android / iOS の共有メニューを出す
+      buttons.push(h('button', { class: 'btn small', type: 'button', onclick: async () => {
+        S.sfx.select();
+        try { await nativeShare.share({ title: t('share.app'), text: full, url: SHARE_URL, dialogTitle: t('share.dialog') }); } catch (e) { /* キャンセル */ }
+      } }, t('share.native')));
     }
+    // web-only:start Web 版では各サービスの投稿画面へのリンクを出す(アプリのビルドでは取り除く)
+    if (!nativeShare) {
+      const enc = encodeURIComponent;
+      const link = (label, href) => h('a', { class: 'btn ghost small', href, target: '_blank', rel: 'noopener', onclick: () => S.sfx.select() }, label);
+      buttons.push(
+        link(t('share.x'), `https://twitter.com/intent/tweet?text=${enc(full)}&url=${enc(SHARE_URL)}`),
+        link(t('share.line'), `https://line.me/R/share?text=${enc(full + '\n' + SHARE_URL)}`),
+        link('Facebook', `https://www.facebook.com/sharer/sharer.php?u=${enc(SHARE_URL)}`));
+    }
+    // web-only:end
+    buttons.push(h('button', { class: nativeShare ? 'btn ghost small' : 'btn small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, t('share.copy')));
     return h('div', { class: 'panel share' },
       h('div', { class: 'eyebrow' }, t('share.h')),
       textEl,
-      h('div', { class: 'row' },
-        link(t('share.x'), `https://twitter.com/intent/tweet?text=${enc(full)}&url=${enc(SHARE_URL)}`),
-        link(t('share.line'), `https://line.me/R/share?text=${enc(full + '\n' + SHARE_URL)}`),
-        link('Facebook', `https://www.facebook.com/sharer/sharer.php?u=${enc(SHARE_URL)}`),
-        h('button', { class: 'btn small', type: 'button', onclick: () => copyText(`${full}\n${SHARE_URL}`, textEl) }, t('share.copy'))));
+      h('div', { class: 'row' }, buttons));
   }
+
 
   function renderReview() {
     const sc = G.sc, R = G.R;
@@ -1108,15 +1114,19 @@
       h('div', null, h('h2', null, t('how.flow.h')), h('ol', null, t('how.flow').map(x => h('li', null, x)))),
       h('div', null, h('h2', null, t('how.axes.h')), h('ul', null, t('how.axes').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
       h('div', null, h('h2', null, t('how.keep.h')), h('ul', null, t('how.keep').map(([a, b]) => h('li', null, h('b', null, a), ': ' + b)))),
+      // web-only:start
       NATIVE ? null : h('div', { class: 'stack' }, h('h2', null, t('store.hub')), playLink(), h('p', { class: 'note' }, t('store.tm'))),
+      // web-only:end
       h('p', { class: 'note' }, t('how.note')),
       h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { S.sfx.click(); toHub(); } }, t('nav.hub')))));
     bindSfx(root);
     show('s-howto');
   }
 
+  // web-only:start
   // Web 版のタイトル画面に、Google Play へのリンクを出す
   if (!NATIVE) { const pl = $('#play-link'); pl.href = t('store.url'); pl.hidden = false; }
+  // web-only:end
 
   /* ── Android アプリ ── */
   if (window.APP_VERSION && window.APP_VERSION !== 'dev') $('#build-info').textContent = window.APP_VERSION;

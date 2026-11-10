@@ -9,6 +9,8 @@
 - アプリ名:日本語の端末では「司令塔」、それ以外では「Command Seat」と表示されます
 - 広告:AdMob(iOS 用のアプリと広告ユニット)。バナー、全画面(インタースティシャル)、リワードの 3 種類。起動時に「トラッキングの許可」の確認画面が出ます
 
+> **Web 版だけの部分はアプリに入れない(Guideline 5.6 対策)**:Google Play へのリンクや、X・LINE・Facebook への投稿リンクは Web 版だけのものです。アプリ用のビルド(`npm run build:app`。`ios:sync`・`ios:release`・`android:sync` と GitHub Actions が使う)では、`<!-- web-only -->` と `// web-only:start` の目印で囲んだ部分を取り除き、`play.google.com` が残っていればビルドを止めます。アプリの中で端末によって隠す機能があると、審査で「審査中に隠した機能」と見なされてリジェクトされることがあるためです。Web 版だけのものを足すときは、必ず目印で囲んでください。
+
 ---
 
 ## 0. ブラウザで先に済ませること(Apple Developer / App Store Connect / AdMob)
