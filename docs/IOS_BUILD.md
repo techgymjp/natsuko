@@ -170,6 +170,53 @@ Google の「Apple の App Store のデータ開示要件への準備」(AdMob �
 
 ---
 
+## 5-2. Guideline 5.6(審査中に隠した機能)でリジェクトされたとき
+
+2026年11月、1.0.0 の審査で「Guideline 5.6 - Developer Code of Conduct」(the app contains features that appear to have been intentionally hidden during the review process)のリジェクトを受けた。
+
+**原因**:TestFlight のビルド 104・105 に、Web 版のための Google Play へのリンクと、それをアプリの中で隠す処理が入っていた。ビルド 106 以降は、アプリ用のビルド(`npm run build:app`)でそれらを取り除いている(冒頭の注意書きのとおり)。
+
+**対応**:
+
+1. App Store Connect の「配信」→ バージョン 1.0.0 で、ビルドを **106 以降の最新**(広告ユニット ID を差し替えた 112 以降)に入れ替える
+2. 実機(iPhone、最新の iOS)で、起動から主な機能を操作した画面録画を撮る(4 章)。作戦の鍵を「広告を見て鍵を開ける」で開けるところも入れる
+3. 「App Review」のメッセージ(Resolution Center)に、下の文を返信し、画面録画を添付する(大きければ共有リンク)
+4. 同じ文を、バージョンのページの「App Review に関する情報」→「メモ」にも入れる
+5. 「審査へ提出」
+
+**返信文(英語)**
+
+```
+Hello App Review team,
+
+Thank you for the review. We have found and fixed the cause.
+
+1. What was wrong
+The game is built from the same files as our web version. The previous build accidentally included a link to our Android version on Google Play, which is meant only for the web version, together with code that hid that link inside the app. It was not a hidden feature of the app, but we understand why it looked like one. We have removed both the link and the hiding code from the app. Build <build number> contains no such code, and the app now has no features that are enabled or disabled by device, review status, date of release, or any server setting. The app has no server and no remote configuration.
+
+2. What the reviewer will see (same as every user)
+- No login or account. Tap "Enter the ops room", choose a mission, and make five decisions against a timer. A review screen follows each mission.
+- Missions unlock in order from easiest to hardest. Mission 1 is open at the start. Finishing a mission unlocks the next one, and any locked mission can also be opened by watching a rewarded ad ("Watch an ad to unlock"). Nothing is sold.
+- "Today's decision" shows one question per day, chosen by the device's date. Past questions are available from the result screen.
+- The language follows the device (Japanese or English) and can be switched on the title screen.
+- Ads (Google AdMob): a banner on menu and review screens, full-screen ads when starting a mission, returning to the ops room or opening a past daily question, and optional rewarded ads. Google's consent form appears only in regions that require it (such as the EU), and the App Tracking Transparency prompt appears once at launch.
+
+3. Screen recording
+Attached is a recording on a physical iPhone (latest iOS), from launch through a full mission, the review screen, unlocking a mission with a rewarded ad, and today's decision. (Shared link: <paste here if the file is too large>)
+
+Thank you.
+```
+
+**返信文の日本語訳(確認用)**
+
+```
+1. 問題だった点:このゲームは Web 版と同じファイルから作っています。前回のビルドには、Web 版だけのための Google Play(Android 版)へのリンクと、それをアプリの中で隠す処理が誤って入っていました。アプリの隠し機能ではありませんが、そう見えたことは理解しています。リンクと隠す処理はアプリから取り除きました。ビルド <番号> にはその処理はなく、端末・審査中かどうか・公開日・サーバーの設定によって機能を出し分けることもありません。サーバーもリモート設定もありません。
+2. 審査で見える内容(すべての利用者と同じ):ログイン不要。作戦を選び、制限時間のある5つの判断を下す。作戦は易しい順に1つずつ鍵が開き、鍵は報酬型広告を見ても開けられる(販売はなし)。「今日の1判断」は端末の日付で1日1問。言語は端末に合わせ、タイトル画面で切り替えられる。広告はバナー、全画面、報酬型。同意画面は EU など必要な地域だけ、トラッキングの確認は起動時に1回。
+3. 画面録画:実機で、起動から作戦1つ、振り返り、広告で鍵を開ける操作、今日の1判断までを録画して添付。
+```
+
+---
+
 ## 6. 公開後にやること
 
 - AdMob で iOS アプリを App Store のアプリに紐づける(「アプリ」→ iOS の司令塔 →「アプリの設定」)
