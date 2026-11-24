@@ -24,7 +24,7 @@ window.Ads = (() => {
       },
       // iOS 用の広告ユニット(AdMob で作成した ID を入れる)
       production: {
-        banner: 'ca-app-pub-6411535997477460/5994362939',
+        banner: 'ca-app-pub-6411535997477460/5563909055',
         interstitial: 'ca-app-pub-6411535997477460/2209984415',
         rewarded: 'ca-app-pub-6411535997477460/2055117929',
       },
